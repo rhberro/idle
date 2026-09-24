@@ -1,0 +1,26 @@
+{
+	"root": false,
+	"extends": "//",
+	"linter": {
+		"domains": {
+			"next": "recommended",
+			"react": "recommended"
+		}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"src/app/**/{page,layout,loading,error,not-found,template,global-error,default}.tsx",
+				"src/instrumentation.ts",
+				"next.config.ts"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					}
+				}
+			}
+		}
+	]
+}

@@ -1,0 +1,20 @@
+{
+	"name": "idle",
+	"private": true,
+	"type": "module",
+	"workspaces": [
+		"apps/*",
+		"services/*",
+		"packages/*"
+	],
+	"scripts": {
+		"format": "biome format --write .",
+		"lint": "biome lint .",
+		"check": "biome check --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "latest",
+		"@types/bun": "latest",
+		"typescript": "^5"
+	}
+}

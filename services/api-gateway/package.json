@@ -1,0 +1,18 @@
+{
+	"name": "@idle/api-gateway",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun --hot src/index.ts",
+		"start": "bun src/index.ts"
+	},
+	"dependencies": {
+		"@idle/shared": "workspace:*",
+		"@supabase/supabase-js": "latest",
+		"pino": "latest"
+	},
+	"devDependencies": {
+		"@types/bun": "latest"
+	}
+}

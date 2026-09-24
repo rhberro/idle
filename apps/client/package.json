@@ -1,0 +1,26 @@
+{
+	"name": "@idle/client",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun --hot src/index.ts",
+		"start": "bun src/index.ts"
+	},
+	"dependencies": {
+		"@idle/shared": "workspace:*",
+		"@supabase/supabase-js": "latest",
+		"pino": "latest",
+		"pixi.js": "latest",
+		"react": "latest",
+		"react-dom": "latest",
+		"zustand": "latest"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@types/react": "latest",
+		"@types/react-dom": "latest",
+		"bun-plugin-tailwind": "latest",
+		"tailwindcss": "latest"
+	}
+}
