@@ -6,7 +6,7 @@ import { RequestPasswordResetForm } from "./auth/request-password-reset-form";
 import { SetNewPasswordForm } from "./auth/set-new-password-form";
 import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
-import { SignedIn } from "./auth/signed-in";
+import { CharacterList } from "./characters/character-list";
 
 type AuthView =
 	| { kind: "loading" }
@@ -187,7 +187,9 @@ export function App() {
 			/>
 		);
 	} else {
-		viewContent = <SignedIn email={view.email} onSignedOut={handleSignedOut} />;
+		viewContent = (
+			<CharacterList email={view.email} onSignedOut={handleSignedOut} />
+		);
 	}
 
 	return (
