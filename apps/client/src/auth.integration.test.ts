@@ -50,7 +50,7 @@ function sleep(ms: number): Promise<void> {
 	});
 }
 
-async function fetchConfirmationTokenHash(email: string): Promise<string> {
+async function searchMailpitMessages(email: string): Promise<{ ID: string }[]> {
 	const mailpitUrl = requireTestEnv("SUPABASE_TEST_MAILPIT_URL");
 	const searchQuery = `to:${email}`;
 	const searchQueryParams = { query: searchQuery };
@@ -58,17 +58,31 @@ async function fetchConfirmationTokenHash(email: string): Promise<string> {
 	const searchUrl = `${mailpitUrl}/api/v1/search?${searchParams}`;
 	const searchResponse = await fetch(searchUrl);
 	const searchResult = (await searchResponse.json()) as MailpitSearchResult;
-	const [message] = searchResult.messages;
+	return searchResult.messages;
+}
+
+async function fetchMailpitMessageHtml(messageId: string): Promise<string> {
+	const mailpitUrl = requireTestEnv("SUPABASE_TEST_MAILPIT_URL");
+	const messageUrl = `${mailpitUrl}/api/v1/message/${messageId}`;
+	const messageResponse = await fetch(messageUrl);
+	const messageBody = (await messageResponse.json()) as MailpitMessage;
+	return messageBody.HTML;
+}
+
+function extractTokenHash(html: string): string | undefined {
+	return html.match(/token_hash=([^&"]+)/)?.[1];
+}
+
+async function fetchConfirmationTokenHash(email: string): Promise<string> {
+	const messages = await searchMailpitMessages(email);
+	const [message] = messages;
 	if (message === undefined) {
 		const notFoundMessage = `No confirmation email found for ${email}`;
 		throw new Error(notFoundMessage);
 	}
 
-	const messageUrl = `${mailpitUrl}/api/v1/message/${message.ID}`;
-	const messageResponse = await fetch(messageUrl);
-	const messageBody = (await messageResponse.json()) as MailpitMessage;
-	const tokenHashMatch = messageBody.HTML.match(/token_hash=([^&"]+)/);
-	const tokenHash = tokenHashMatch?.[1];
+	const html = await fetchMailpitMessageHtml(message.ID);
+	const tokenHash = extractTokenHash(html);
 	if (tokenHash === undefined) {
 		const noTokenMessage = `No token_hash found in confirmation email for ${email}`;
 		throw new Error(noTokenMessage);
@@ -78,23 +92,13 @@ async function fetchConfirmationTokenHash(email: string): Promise<string> {
 }
 
 async function fetchRecoveryTokenHash(email: string): Promise<string> {
-	const mailpitUrl = requireTestEnv("SUPABASE_TEST_MAILPIT_URL");
-	const searchQuery = `to:${email}`;
-	const searchQueryParams = { query: searchQuery };
-	const searchParams = new URLSearchParams(searchQueryParams);
-	const searchUrl = `${mailpitUrl}/api/v1/search?${searchParams}`;
-	const searchResponse = await fetch(searchUrl);
-	const searchResult = (await searchResponse.json()) as MailpitSearchResult;
-
-	for (const message of searchResult.messages) {
-		const messageUrl = `${mailpitUrl}/api/v1/message/${message.ID}`;
-		const messageResponse = await fetch(messageUrl);
-		const messageBody = (await messageResponse.json()) as MailpitMessage;
-		if (!messageBody.HTML.includes("type=recovery")) {
+	const messages = await searchMailpitMessages(email);
+	for (const message of messages) {
+		const html = await fetchMailpitMessageHtml(message.ID);
+		if (!html.includes("type=recovery")) {
 			continue;
 		}
-		const tokenHashMatch = messageBody.HTML.match(/token_hash=([^&"]+)/);
-		const tokenHash = tokenHashMatch?.[1];
+		const tokenHash = extractTokenHash(html);
 		if (tokenHash !== undefined) {
 			return tokenHash;
 		}
