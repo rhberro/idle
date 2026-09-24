@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
 	EmailNotVerifiedError,
 	InvalidCredentialsError,
+	signInWithGoogle,
 	signInWithPassword,
 } from "../auth";
 import { ErrorNotice } from "./error-notice";
@@ -59,6 +60,22 @@ export function SignInForm(props: SignInFormProps) {
 		void submitSignIn();
 	}
 
+	async function submitGoogleSignIn() {
+		setIsSubmitting(true);
+		try {
+			await signInWithGoogle();
+		} catch {
+			setErrorMessage("Something went wrong. Please try again.");
+		} finally {
+			setIsSubmitting(false);
+		}
+	}
+
+	function handleGoogleSignIn() {
+		setErrorMessage(undefined);
+		void submitGoogleSignIn();
+	}
+
 	return (
 		<form className="flex flex-col gap-3" onSubmit={handleSubmit}>
 			<h1 className="text-xl font-semibold">Sign in</h1>
@@ -89,6 +106,14 @@ export function SignInForm(props: SignInFormProps) {
 				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
 			>
 				{isSubmitting ? "Signing in..." : "Sign in"}
+			</button>
+			<button
+				type="button"
+				onClick={handleGoogleSignIn}
+				disabled={isSubmitting}
+				className="rounded border border-neutral-700 px-3 py-1.5 font-medium hover:bg-neutral-800 disabled:opacity-50"
+			>
+				Sign in with Google
 			</button>
 			<button
 				type="button"
