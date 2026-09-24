@@ -5,10 +5,16 @@ export class EmailNotVerifiedError extends Error {}
 export class InvalidCredentialsError extends Error {}
 export class WeakPasswordError extends Error {}
 export class UnexpectedAuthError extends Error {}
+export class ListCharactersError extends Error {}
 
 export type Account = {
 	id: string;
 	email: string;
+};
+
+export type CharacterSummary = {
+	id: string;
+	name: string;
 };
 
 type AuthErrorLike = {
@@ -95,4 +101,16 @@ export async function getSession(): Promise<Account | undefined> {
 	const supabase = getSupabaseClient();
 	const { data } = await supabase.auth.getSession();
 	return toAccount(data.session?.user);
+}
+
+export async function listCharacters(): Promise<CharacterSummary[]> {
+	const supabase = getSupabaseClient();
+	const { data, error } = await supabase
+		.from("characters")
+		.select("id, name")
+		.order("name");
+	if (error) {
+		throw new ListCharactersError(error.message);
+	}
+	return data;
 }

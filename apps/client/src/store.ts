@@ -1,16 +1,16 @@
-import type { Player } from "@idle/shared";
+import type { Character } from "@idle/shared";
 import { create, type StateCreator } from "zustand";
 
 export type GameState = {
-	player: Player | undefined;
-	setPlayer: (player: Player) => void;
+	character: Character | undefined;
+	setCharacter: (character: Character) => void;
 };
 
 const createGameStore: StateCreator<GameState> = function createGameStore(set) {
 	return {
-		player: undefined,
-		setPlayer(player) {
-			const nextState = { player };
+		character: undefined,
+		setCharacter(character) {
+			const nextState = { character };
 			set(nextState);
 		},
 	};

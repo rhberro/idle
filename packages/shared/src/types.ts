@@ -3,7 +3,7 @@ export type Position = {
 	y: number;
 };
 
-export type Player = {
+export type Character = {
 	id: string;
 	name: string;
 	position: Position;

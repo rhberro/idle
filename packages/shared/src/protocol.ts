@@ -30,3 +30,13 @@ export type ClientMessage = z.infer<typeof clientMessageSchema>;
 export function parseClientMessage(raw: unknown): ClientMessage {
 	return clientMessageSchema.parse(raw);
 }
+
+const characterNameMinLength = 3;
+const characterNameMaxLength = 20;
+const characterNamePattern = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+export const characterNameSchema = z
+	.string()
+	.min(characterNameMinLength)
+	.max(characterNameMaxLength)
+	.regex(characterNamePattern);

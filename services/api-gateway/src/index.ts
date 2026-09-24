@@ -1,4 +1,4 @@
-import type { Player } from "@idle/shared";
+import type { Character } from "@idle/shared";
 import { getPort } from "./env";
 import { logger } from "./logger";
 
@@ -10,9 +10,9 @@ function handleHealth() {
 	return Response.json(healthPayload);
 }
 
-function handleListPlayers() {
-	const players: Player[] = [];
-	return Response.json(players);
+function handleListCharacters() {
+	const characters: Character[] = [];
+	return Response.json(characters);
 }
 
 const notFoundInit = { status: 404 };
@@ -23,7 +23,7 @@ function handleNotFound() {
 
 const routes = {
 	"/health": handleHealth,
-	"/api/players": handleListPlayers,
+	"/api/characters": handleListCharacters,
 };
 
 const serverOptions = {

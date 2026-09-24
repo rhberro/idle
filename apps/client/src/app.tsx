@@ -3,7 +3,7 @@ import { confirmEmail, getSession } from "./auth";
 import { PendingVerification } from "./auth/pending-verification";
 import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
-import { SignedIn } from "./auth/signed-in";
+import { CharacterList } from "./characters/character-list";
 
 type AuthView =
 	| { kind: "loading" }
@@ -128,7 +128,9 @@ export function App() {
 			</p>
 		);
 	} else {
-		viewContent = <SignedIn email={view.email} onSignedOut={handleSignedOut} />;
+		viewContent = (
+			<CharacterList email={view.email} onSignedOut={handleSignedOut} />
+		);
 	}
 
 	return (
