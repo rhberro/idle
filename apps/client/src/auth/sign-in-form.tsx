@@ -10,10 +10,16 @@ type SignInFormProps = {
 	onSignedIn: (email: string) => void;
 	onNeedsVerification: (email: string) => void;
 	onSwitchToSignUp: () => void;
+	onForgotPassword: () => void;
 };
 
 export function SignInForm(props: SignInFormProps) {
-	const { onSignedIn, onNeedsVerification, onSwitchToSignUp } = props;
+	const {
+		onSignedIn,
+		onNeedsVerification,
+		onSwitchToSignUp,
+		onForgotPassword,
+	} = props;
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [errorMessage, setErrorMessage] = useState<string | undefined>(
@@ -83,6 +89,13 @@ export function SignInForm(props: SignInFormProps) {
 				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
 			>
 				{isSubmitting ? "Signing in..." : "Sign in"}
+			</button>
+			<button
+				type="button"
+				onClick={onForgotPassword}
+				className="text-sm text-neutral-400 underline"
+			>
+				Forgot password?
 			</button>
 			<button
 				type="button"

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { confirmEmail, getSession } from "./auth";
+import { PasswordResetRequested } from "./auth/password-reset-requested";
 import { PendingVerification } from "./auth/pending-verification";
+import { RequestPasswordResetForm } from "./auth/request-password-reset-form";
+import { SetNewPasswordForm } from "./auth/set-new-password-form";
 import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
 import { SignedIn } from "./auth/signed-in";
@@ -11,22 +14,31 @@ type AuthView =
 	| { kind: "sign-up" }
 	| { kind: "pending-verification"; email: string }
 	| { kind: "verification-failed" }
+	| { kind: "request-password-reset" }
+	| { kind: "password-reset-requested"; email: string }
+	| { kind: "reset-password"; tokenHash: string }
 	| { kind: "signed-in"; email: string };
 
 const loadingView: AuthView = { kind: "loading" };
 const signInView: AuthView = { kind: "sign-in" };
 const signUpView: AuthView = { kind: "sign-up" };
 const verificationFailedView: AuthView = { kind: "verification-failed" };
+const requestPasswordResetView: AuthView = { kind: "request-password-reset" };
 const emptyHistoryState = {};
 
-function readTokenHashFromLocation(): string | undefined {
+type LocationToken = { type: "email" | "recovery"; tokenHash: string };
+
+function readTokenFromLocation(): LocationToken | undefined {
 	const searchParams = new URLSearchParams(window.location.search);
 	const type = searchParams.get("type");
 	const tokenHash = searchParams.get("token_hash");
-	if (type !== "email" || tokenHash === null) {
+	if (tokenHash === null) {
 		return undefined;
 	}
-	return tokenHash;
+	if (type === "email" || type === "recovery") {
+		return { type, tokenHash };
+	}
+	return undefined;
 }
 
 export function App() {
@@ -69,11 +81,22 @@ export function App() {
 			}
 		}
 
-		const tokenHash = readTokenHashFromLocation();
-		if (tokenHash === undefined) {
+		const locationToken = readTokenFromLocation();
+		if (locationToken === undefined) {
 			void checkExistingSession();
+		} else if (locationToken.type === "email") {
+			void confirmFromUrl(locationToken.tokenHash);
 		} else {
-			void confirmFromUrl(tokenHash);
+			window.history.replaceState(
+				emptyHistoryState,
+				"",
+				window.location.pathname,
+			);
+			const nextView: AuthView = {
+				kind: "reset-password",
+				tokenHash: locationToken.tokenHash,
+			};
+			setView(nextView);
 		}
 	}
 
@@ -97,6 +120,20 @@ export function App() {
 		setView(signInView);
 	}
 
+	function switchToRequestPasswordReset() {
+		setView(requestPasswordResetView);
+	}
+
+	function handlePasswordResetRequested(email: string) {
+		const nextView: AuthView = { kind: "password-reset-requested", email };
+		setView(nextView);
+	}
+
+	function handlePasswordReset(email: string) {
+		const nextView: AuthView = { kind: "signed-in", email };
+		setView(nextView);
+	}
+
 	function handleSignedOut() {
 		setView(signInView);
 	}
@@ -110,6 +147,7 @@ export function App() {
 				onSignedIn={handleSignedIn}
 				onNeedsVerification={showPendingVerification}
 				onSwitchToSignUp={switchToSignUp}
+				onForgotPassword={switchToRequestPasswordReset}
 			/>
 		);
 	} else if (view.kind === "sign-up") {
@@ -126,6 +164,27 @@ export function App() {
 			<p className="text-sm text-red-400">
 				That verification link is invalid or has expired.
 			</p>
+		);
+	} else if (view.kind === "request-password-reset") {
+		viewContent = (
+			<RequestPasswordResetForm
+				onSubmitted={handlePasswordResetRequested}
+				onSwitchToSignIn={switchToSignIn}
+			/>
+		);
+	} else if (view.kind === "password-reset-requested") {
+		viewContent = (
+			<PasswordResetRequested
+				email={view.email}
+				onSwitchToSignIn={switchToSignIn}
+			/>
+		);
+	} else if (view.kind === "reset-password") {
+		viewContent = (
+			<SetNewPasswordForm
+				tokenHash={view.tokenHash}
+				onPasswordReset={handlePasswordReset}
+			/>
 		);
 	} else {
 		viewContent = <SignedIn email={view.email} onSignedOut={handleSignedOut} />;

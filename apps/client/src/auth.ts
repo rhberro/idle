@@ -83,6 +83,34 @@ export async function signInWithPassword(
 	return toAccount(data.user);
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+	const supabase = getSupabaseClient();
+	const { error } = await supabase.auth.resetPasswordForEmail(email);
+	if (error) {
+		throw mapAuthError(error);
+	}
+}
+
+export async function confirmPasswordReset(
+	tokenHash: string,
+	newPassword: string,
+): Promise<Account | undefined> {
+	const supabase = getSupabaseClient();
+	const verifyOtpParams = { token_hash: tokenHash, type: "recovery" as const };
+	const { error: verifyError } = await supabase.auth.verifyOtp(verifyOtpParams);
+	if (verifyError) {
+		throw mapAuthError(verifyError);
+	}
+
+	const updateUserParams = { password: newPassword };
+	const { data, error: updateError } =
+		await supabase.auth.updateUser(updateUserParams);
+	if (updateError) {
+		throw mapAuthError(updateError);
+	}
+	return toAccount(data.user);
+}
+
 export async function signOut(): Promise<void> {
 	const supabase = getSupabaseClient();
 	const { error } = await supabase.auth.signOut();

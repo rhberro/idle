@@ -255,6 +255,13 @@ otp_expiry = 3600
 subject = "Confirm your signup"
 content_path = "./supabase/templates/confirmation.html"
 
+# Same client-side token_hash + type pattern as the confirmation template above,
+# but with type=recovery so the client calls supabase.auth.verifyOtp() with
+# type: "recovery" and lands on the set-a-new-password screen.
+[auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "./supabase/templates/recovery.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
