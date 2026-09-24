@@ -83,6 +83,15 @@ export async function signInWithPassword(
 	return toAccount(data.user);
 }
 
+export async function signInWithGoogle(): Promise<void> {
+	const supabase = getSupabaseClient();
+	const signInParams = { provider: "google" as const };
+	const { error } = await supabase.auth.signInWithOAuth(signInParams);
+	if (error) {
+		throw mapAuthError(error);
+	}
+}
+
 export async function signOut(): Promise<void> {
 	const supabase = getSupabaseClient();
 	const { error } = await supabase.auth.signOut();
