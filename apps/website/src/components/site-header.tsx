@@ -7,8 +7,7 @@ import {
 	HStack,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
-import { signOut } from "@/app/actions/auth";
-import { createClient } from "@/lib/supabase/server";
+import { requireEnv } from "@/lib/env";
 
 type NavItem = {
 	label: string;
@@ -25,6 +24,10 @@ const navItems: NavItem[] = [
 const brandLinkHoverStyle = { textDecoration: "none" };
 const navLinkHoverStyle = { color: "fg" };
 const navGroupDisplay = { base: "none", md: "flex" };
+const playGameHref = requireEnv(
+	"NEXT_PUBLIC_CLIENT_URL",
+	process.env.NEXT_PUBLIC_CLIENT_URL,
+);
 
 function renderNavItem(item: NavItem) {
 	return (
@@ -41,29 +44,7 @@ function renderNavItem(item: NavItem) {
 
 const renderedNavItems = navItems.map(renderNavItem);
 
-export async function SiteHeader() {
-	const supabase = await createClient();
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-
-	const authControls = user ? (
-		<form action={signOut}>
-			<Button type="submit" variant="outline" size="sm">
-				Sign out
-			</Button>
-		</form>
-	) : (
-		<>
-			<Button asChild variant="ghost" size="sm">
-				<NextLink href="/login">Sign in</NextLink>
-			</Button>
-			<Button asChild size="sm">
-				<NextLink href="/signup">Sign up</NextLink>
-			</Button>
-		</>
-	);
-
+export function SiteHeader() {
 	return (
 		<Box
 			as="header"
@@ -89,7 +70,9 @@ export async function SiteHeader() {
 						{renderedNavItems}
 					</HStack>
 
-					<HStack gap="3">{authControls}</HStack>
+					<Button asChild size="sm">
+						<ChakraLink href={playGameHref}>Play game</ChakraLink>
+					</Button>
 				</Flex>
 			</Container>
 		</Box>
