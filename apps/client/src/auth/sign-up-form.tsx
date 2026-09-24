@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { signUpWithPassword, WeakPasswordError } from "../auth";
+import { ErrorNotice } from "./error-notice";
 
 type SignUpFormProps = {
 	onSignedUp: (email: string) => void;
+	onSwitchToSignIn: () => void;
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,7 +29,7 @@ function validate(
 }
 
 export function SignUpForm(props: SignUpFormProps) {
-	const { onSignedUp } = props;
+	const { onSignedUp, onSwitchToSignIn } = props;
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -77,11 +79,6 @@ export function SignUpForm(props: SignUpFormProps) {
 		void submitSignUp();
 	}
 
-	const errorNotice =
-		errorMessage === undefined ? undefined : (
-			<p className="text-sm text-red-400">{errorMessage}</p>
-		);
-
 	return (
 		<form className="flex flex-col gap-3" onSubmit={handleSubmit}>
 			<h1 className="text-xl font-semibold">Create your Account</h1>
@@ -118,13 +115,20 @@ export function SignUpForm(props: SignUpFormProps) {
 				value={confirmPassword}
 				onChange={handleConfirmPasswordChange}
 			/>
-			{errorNotice}
+			<ErrorNotice message={errorMessage} />
 			<button
 				type="submit"
 				disabled={isSubmitting}
 				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
 			>
 				{isSubmitting ? "Creating Account..." : "Create Account"}
+			</button>
+			<button
+				type="button"
+				onClick={onSwitchToSignIn}
+				className="text-sm text-neutral-400 underline"
+			>
+				Already have an account? Sign in
 			</button>
 		</form>
 	);

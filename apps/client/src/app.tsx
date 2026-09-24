@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
-import { confirmEmail } from "./auth";
+import { confirmEmail, getSession } from "./auth";
 import { PendingVerification } from "./auth/pending-verification";
+import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
-import { VerifiedNotice } from "./auth/verified-notice";
+import { SignedIn } from "./auth/signed-in";
 
 type AuthView =
+	| { kind: "loading" }
+	| { kind: "sign-in" }
 	| { kind: "sign-up" }
 	| { kind: "pending-verification"; email: string }
-	| { kind: "verified" }
-	| { kind: "verification-failed" };
+	| { kind: "verification-failed" }
+	| { kind: "signed-in"; email: string };
 
+const loadingView: AuthView = { kind: "loading" };
+const signInView: AuthView = { kind: "sign-in" };
 const signUpView: AuthView = { kind: "sign-up" };
-const verifiedView: AuthView = { kind: "verified" };
 const verificationFailedView: AuthView = { kind: "verification-failed" };
 const emptyHistoryState = {};
 
@@ -26,18 +30,21 @@ function readTokenHashFromLocation(): string | undefined {
 }
 
 export function App() {
-	const [view, setView] = useState<AuthView>(signUpView);
+	const [view, setView] = useState<AuthView>(loadingView);
 
-	function processEmailConfirmationFromUrl() {
-		const tokenHash = readTokenHashFromLocation();
-		if (tokenHash === undefined) {
-			return;
-		}
-
-		async function confirm(hash: string) {
+	function checkInitialAuthState() {
+		async function confirmFromUrl(hash: string) {
 			try {
-				await confirmEmail(hash);
-				setView(verifiedView);
+				const account = await confirmEmail(hash);
+				if (account === undefined) {
+					setView(signInView);
+				} else {
+					const nextView: AuthView = {
+						kind: "signed-in",
+						email: account.email,
+					};
+					setView(nextView);
+				}
 			} catch {
 				setView(verificationFailedView);
 			} finally {
@@ -49,29 +56,79 @@ export function App() {
 			}
 		}
 
-		void confirm(tokenHash);
+		async function checkExistingSession() {
+			const account = await getSession();
+			if (account === undefined) {
+				setView(signInView);
+			} else {
+				const nextView: AuthView = {
+					kind: "signed-in",
+					email: account.email,
+				};
+				setView(nextView);
+			}
+		}
+
+		const tokenHash = readTokenHashFromLocation();
+		if (tokenHash === undefined) {
+			void checkExistingSession();
+		} else {
+			void confirmFromUrl(tokenHash);
+		}
 	}
 
-	useEffect(processEmailConfirmationFromUrl, []);
+	useEffect(checkInitialAuthState, []);
 
-	function handleSignedUp(email: string) {
+	function showPendingVerification(email: string) {
 		const nextView: AuthView = { kind: "pending-verification", email };
 		setView(nextView);
 	}
 
+	function handleSignedIn(email: string) {
+		const nextView: AuthView = { kind: "signed-in", email };
+		setView(nextView);
+	}
+
+	function switchToSignUp() {
+		setView(signUpView);
+	}
+
+	function switchToSignIn() {
+		setView(signInView);
+	}
+
+	function handleSignedOut() {
+		setView(signInView);
+	}
+
 	let viewContent: React.ReactNode;
-	if (view.kind === "sign-up") {
-		viewContent = <SignUpForm onSignedUp={handleSignedUp} />;
+	if (view.kind === "loading") {
+		viewContent = <p className="text-sm text-neutral-400">Loading…</p>;
+	} else if (view.kind === "sign-in") {
+		viewContent = (
+			<SignInForm
+				onSignedIn={handleSignedIn}
+				onNeedsVerification={showPendingVerification}
+				onSwitchToSignUp={switchToSignUp}
+			/>
+		);
+	} else if (view.kind === "sign-up") {
+		viewContent = (
+			<SignUpForm
+				onSignedUp={showPendingVerification}
+				onSwitchToSignIn={switchToSignIn}
+			/>
+		);
 	} else if (view.kind === "pending-verification") {
 		viewContent = <PendingVerification email={view.email} />;
-	} else if (view.kind === "verified") {
-		viewContent = <VerifiedNotice />;
-	} else {
+	} else if (view.kind === "verification-failed") {
 		viewContent = (
 			<p className="text-sm text-red-400">
 				That verification link is invalid or has expired.
 			</p>
 		);
+	} else {
+		viewContent = <SignedIn email={view.email} onSignedOut={handleSignedOut} />;
 	}
 
 	return (
