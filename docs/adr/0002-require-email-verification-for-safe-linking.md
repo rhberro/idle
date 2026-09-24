@@ -1,0 +1,5 @@
+# Require email verification, to make automatic account linking safe
+
+We initially planned to skip email verification for ease of onboarding, while also wanting Google and email/password sign-ups sharing an address to automatically merge into one Account. Those two don't mix safely: Supabase's own linking logic (`DetermineAccountLinking` in `supabase/auth`) treats an email as "verified" for linking purposes whenever `Mailer.Autoconfirm` is on, whether or not anyone actually proved ownership of it. That opens an account-takeover path — an attacker pre-registers a victim's real email with a password, and inherits access when the victim later signs in with Google using that same address, because Supabase merges the two into one Account.
+
+We're requiring real email verification for password sign-ups instead, so Supabase's default linking behavior only merges identities whose email ownership has actually been proven. This also means the confirmation link needs a landing page, which lives in `apps/client` per [ADR 0001](./0001-auth-owned-entirely-by-client.md).
