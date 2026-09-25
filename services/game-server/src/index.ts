@@ -3,8 +3,10 @@ import type { Server, ServerWebSocket } from "bun";
 import { authenticateConnection, type ConnectionData } from "./connection-auth";
 import { getEnv, getPort } from "./env";
 import { logger } from "./logger";
+import { getSupabaseClient } from "./supabase-client";
 import {
 	buildWorldSnapshot,
+	type OnlineCharacterState,
 	registerCharacter,
 	tryMoveCharacter,
 	unregisterCharacter,
@@ -91,10 +93,24 @@ function handleGameMessage(
 	}
 }
 
+async function persistFinalPosition(state: OnlineCharacterState) {
+	const { error } = await getSupabaseClient()
+		.from("characters")
+		.update({ x: state.x, y: state.y, direction: state.direction })
+		.eq("id", state.id);
+	if (error) {
+		const warnPayload = { error, characterId: state.id };
+		logger.warn(warnPayload, "failed to persist character position");
+	}
+}
+
 function handleGameClose(ws: ServerWebSocket<ConnectionData>) {
-	unregisterCharacter(ws);
+	const removedState = unregisterCharacter(ws);
 	const logPayload = { characterId: ws.data.characterId };
 	logger.info(logPayload, "character disconnected");
+	if (removedState !== undefined) {
+		void persistFinalPosition(removedState);
+	}
 }
 
 const routes = {

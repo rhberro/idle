@@ -10,7 +10,7 @@ import {
 import type { ServerWebSocket } from "bun";
 import type { ConnectionData } from "./connection-auth";
 
-type OnlineCharacterState = {
+export type OnlineCharacterState = {
 	ws: ServerWebSocket<ConnectionData>;
 	id: string;
 	name: string;
@@ -56,12 +56,16 @@ export function registerCharacter(
 	return existing?.ws;
 }
 
-export function unregisterCharacter(ws: ServerWebSocket<ConnectionData>): void {
+export function unregisterCharacter(
+	ws: ServerWebSocket<ConnectionData>,
+): OnlineCharacterState | undefined {
 	const { characterId } = ws.data;
 	const current = onlineCharacters.get(characterId);
-	if (current !== undefined && current.ws === ws) {
-		onlineCharacters.delete(characterId);
+	if (current === undefined || current.ws !== ws) {
+		return undefined;
 	}
+	onlineCharacters.delete(characterId);
+	return current;
 }
 
 export function tryMoveCharacter(
