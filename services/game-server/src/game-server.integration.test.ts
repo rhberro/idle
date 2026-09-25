@@ -1,4 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
+import { ISLAND_MIN_TILE } from "@idle/shared";
 import {
 	createAdminClient,
 	createTestCharacter,
@@ -69,6 +70,24 @@ function waitForClose(socket: WebSocket): Promise<void> {
 		socket.addEventListener("close", handleClose, { once: true });
 	});
 	return withTimeout(closed, "Timed out waiting for the socket to close");
+}
+
+const NO_MESSAGE_WAIT_MS = 300;
+
+function waitForMessageOrTimeout(
+	socket: WebSocket,
+	ms: number,
+): Promise<unknown | "timeout"> {
+	return new Promise(function race(resolve) {
+		const timer = setTimeout(function onTimeout() {
+			resolve("timeout");
+		}, ms);
+		function handleMessage(event: MessageEvent) {
+			clearTimeout(timer);
+			resolve(JSON.parse(event.data.toString()));
+		}
+		socket.addEventListener("message", handleMessage, { once: true });
+	});
 }
 
 afterAll(function stopServer() {
@@ -185,4 +204,97 @@ test("a second connection for the same Character closes the first", async functi
 	await firstClosed;
 
 	second.socket.close();
+});
+
+test("a valid move broadcasts character-moved with the new position", async function () {
+	const account = await createVerifiedTestAccount();
+	const worldId = await fetchSeedWorldId();
+	const character = await createTestCharacter(
+		account.id,
+		worldId,
+		`Move_${randomNameSuffix()}`,
+	);
+	const token = await fetchAccessToken(account.email);
+
+	const result = await connectGameSocket(buildWsUrl(token, character.id));
+	if (result.outcome !== "open") {
+		throw new Error("expected connection to open");
+	}
+	await waitForMessage(result.socket);
+
+	result.socket.send(
+		JSON.stringify({ type: "player-move", direction: "north" }),
+	);
+	const moveMessage = await waitForMessage(result.socket);
+	expect(moveMessage).toEqual({
+		type: "character-moved",
+		characterId: character.id,
+		x: character.x,
+		y: character.y - 1,
+		direction: "north",
+	});
+
+	result.socket.close();
+});
+
+test("a move sent before the step duration elapses is ignored", async function () {
+	const account = await createVerifiedTestAccount();
+	const worldId = await fetchSeedWorldId();
+	const character = await createTestCharacter(
+		account.id,
+		worldId,
+		`Fast_${randomNameSuffix()}`,
+	);
+	const token = await fetchAccessToken(account.email);
+
+	const result = await connectGameSocket(buildWsUrl(token, character.id));
+	if (result.outcome !== "open") {
+		throw new Error("expected connection to open");
+	}
+	await waitForMessage(result.socket);
+
+	result.socket.send(
+		JSON.stringify({ type: "player-move", direction: "north" }),
+	);
+	await waitForMessage(result.socket);
+
+	result.socket.send(
+		JSON.stringify({ type: "player-move", direction: "north" }),
+	);
+	const secondAttempt = await waitForMessageOrTimeout(
+		result.socket,
+		NO_MESSAGE_WAIT_MS,
+	);
+	expect(secondAttempt).toBe("timeout");
+
+	result.socket.close();
+});
+
+test("a move into the ocean is ignored", async function () {
+	const account = await createVerifiedTestAccount();
+	const worldId = await fetchSeedWorldId();
+	const character = await createTestCharacter(
+		account.id,
+		worldId,
+		`Edge_${randomNameSuffix()}`,
+		{ x: ISLAND_MIN_TILE, y: ISLAND_MIN_TILE },
+	);
+	const token = await fetchAccessToken(account.email);
+
+	const result = await connectGameSocket(buildWsUrl(token, character.id));
+	if (result.outcome !== "open") {
+		throw new Error("expected connection to open");
+	}
+	await waitForMessage(result.socket);
+
+	result.socket.send(
+		JSON.stringify({ type: "player-move", direction: "west" }),
+	);
+	const attempt = await waitForMessageOrTimeout(
+		result.socket,
+		NO_MESSAGE_WAIT_MS,
+	);
+	expect(attempt).toBe("timeout");
+
+	result.socket.close();
 });

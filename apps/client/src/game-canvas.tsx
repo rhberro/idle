@@ -8,7 +8,12 @@ import {
 import { Application, Container, Graphics } from "pixi.js";
 import { useEffect, useRef } from "react";
 import { getAccessToken } from "./auth";
-import { connectToWorld } from "./game-connection";
+import { connectToWorld, sendPlayerMove } from "./game-connection";
+import {
+	computeCameraOffset,
+	keyToDirection,
+	tileToPixels,
+} from "./game-render-math";
 import { useGameStore } from "./store";
 
 type GameCanvasProps = {
@@ -28,10 +33,6 @@ const pixiDestroyCleanupOptions = {
 	texture: true,
 	textureSource: true,
 };
-
-function tileToPixels(tile: number): number {
-	return tile * GRID_TILE_SIZE;
-}
 
 function drawMap(): Graphics {
 	const islandSizeTiles = ISLAND_MAX_TILE - ISLAND_MIN_TILE + 1;
@@ -112,19 +113,25 @@ export function GameCanvas(props: GameCanvasProps) {
 			if (ownCharacter === undefined) {
 				return;
 			}
-			const ownCharacterCenterX =
-				tileToPixels(ownCharacter.x) + CHARACTER_CENTER_OFFSET;
-			const ownCharacterCenterY =
-				tileToPixels(ownCharacter.y) + CHARACTER_CENTER_OFFSET;
-			worldContainer.position.set(
-				app.screen.width / 2 - ownCharacterCenterX,
-				app.screen.height / 2 - ownCharacterCenterY,
+			const offset = computeCameraOffset(
+				ownCharacter,
+				app.screen.width,
+				app.screen.height,
 			);
+			worldContainer.position.set(offset.x, offset.y);
 		}
 
 		function renderFrame() {
 			syncCharacterShapes();
 			centerCameraOnOwnCharacter();
+		}
+
+		function handleKeyDown(event: KeyboardEvent) {
+			const direction = keyToDirection(event.key);
+			if (direction === undefined || socket === undefined) {
+				return;
+			}
+			sendPlayerMove(socket, direction);
 		}
 
 		async function setup(element: HTMLDivElement) {
@@ -144,6 +151,7 @@ export function GameCanvas(props: GameCanvasProps) {
 			worldContainer.addChild(drawMap());
 			app.stage.addChild(worldContainer);
 			app.ticker.add(renderFrame);
+			window.addEventListener("keydown", handleKeyDown);
 
 			const token = await getAccessToken();
 			if (token === undefined || cancelled) {
@@ -156,6 +164,7 @@ export function GameCanvas(props: GameCanvasProps) {
 
 		function cleanup() {
 			cancelled = true;
+			window.removeEventListener("keydown", handleKeyDown);
 			socket?.close();
 			if (app.renderer) {
 				app.destroy(pixiDestroyOptions, pixiDestroyCleanupOptions);

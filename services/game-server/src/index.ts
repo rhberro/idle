@@ -1,4 +1,4 @@
-import { parseClientMessage } from "@idle/shared";
+import { type Direction, parseClientMessage } from "@idle/shared";
 import type { Server, ServerWebSocket } from "bun";
 import { authenticateConnection, type ConnectionData } from "./connection-auth";
 import { getEnv, getPort } from "./env";
@@ -6,12 +6,15 @@ import { logger } from "./logger";
 import {
 	buildWorldSnapshot,
 	registerCharacter,
+	tryMoveCharacter,
 	unregisterCharacter,
 } from "./world-state";
 
 const port = getPort(4002);
 const worldId = getEnv("WORLD_ID");
 const WORLD_TOPIC = "world";
+
+let server: Server<ConnectionData>;
 
 const healthPayload = { status: "ok", service: "game-server" };
 
@@ -54,6 +57,17 @@ function handleGameOpen(ws: ServerWebSocket<ConnectionData>) {
 
 const pongPayload = { type: "pong" };
 
+function handlePlayerMove(
+	ws: ServerWebSocket<ConnectionData>,
+	direction: Direction,
+) {
+	const moveResult = tryMoveCharacter(ws.data.characterId, direction);
+	if (moveResult === undefined) {
+		return;
+	}
+	server.publish(WORLD_TOPIC, JSON.stringify(moveResult));
+}
+
 function handleGameMessage(
 	ws: ServerWebSocket<ConnectionData>,
 	raw: string | Buffer,
@@ -63,6 +77,10 @@ function handleGameMessage(
 		if (message.type === "ping") {
 			const pongMessage = JSON.stringify(pongPayload);
 			ws.send(pongMessage);
+			return;
+		}
+		if (message.type === "player-move") {
+			handlePlayerMove(ws, message.direction);
 			return;
 		}
 		const logPayload = { message };
@@ -96,7 +114,9 @@ const serverOptions = {
 	websocket: websocketHandlers,
 };
 
-export const server = Bun.serve(serverOptions);
+server = Bun.serve(serverOptions);
+
+export { server };
 
 const startupMessage = `game-server listening on ${server.url}`;
 logger.info(startupMessage);

@@ -79,11 +79,18 @@ export async function createTestCharacter(
 	accountId: string,
 	worldId: string,
 	name: string,
+	position?: { x: number; y: number },
 ): Promise<TestCharacter> {
 	const admin = createAdminClient();
+	const newCharacter = {
+		account_id: accountId,
+		world_id: worldId,
+		name,
+		...position,
+	};
 	const { data, error } = await admin
 		.from("characters")
-		.insert({ account_id: accountId, world_id: worldId, name })
+		.insert(newCharacter)
 		.select("id, name, x, y, direction")
 		.single();
 	if (error) {

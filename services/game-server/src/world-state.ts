@@ -1,7 +1,11 @@
-import type {
-	Direction,
-	OnlineCharacter,
-	WorldSnapshotMessage,
+import {
+	applyDirection,
+	type CharacterMovedMessage,
+	type Direction,
+	isWithinIsland,
+	type OnlineCharacter,
+	WORLD_TICK_MS,
+	type WorldSnapshotMessage,
 } from "@idle/shared";
 import type { ServerWebSocket } from "bun";
 import type { ConnectionData } from "./connection-auth";
@@ -13,6 +17,7 @@ type OnlineCharacterState = {
 	x: number;
 	y: number;
 	direction: Direction;
+	nextAllowedMoveAt: number;
 };
 
 const onlineCharacters = new Map<string, OnlineCharacterState>();
@@ -46,6 +51,7 @@ export function registerCharacter(
 		x,
 		y,
 		direction,
+		nextAllowedMoveAt: 0,
 	});
 	return existing?.ws;
 }
@@ -56,4 +62,37 @@ export function unregisterCharacter(ws: ServerWebSocket<ConnectionData>): void {
 	if (current !== undefined && current.ws === ws) {
 		onlineCharacters.delete(characterId);
 	}
+}
+
+export function tryMoveCharacter(
+	characterId: string,
+	direction: Direction,
+): CharacterMovedMessage | undefined {
+	const state = onlineCharacters.get(characterId);
+	if (state === undefined) {
+		return undefined;
+	}
+
+	const now = Date.now();
+	if (now < state.nextAllowedMoveAt) {
+		return undefined;
+	}
+
+	const destination = applyDirection({ x: state.x, y: state.y }, direction);
+	if (!isWithinIsland(destination)) {
+		return undefined;
+	}
+
+	state.x = destination.x;
+	state.y = destination.y;
+	state.direction = direction;
+	state.nextAllowedMoveAt = now + WORLD_TICK_MS;
+
+	return {
+		type: "character-moved",
+		characterId,
+		x: state.x,
+		y: state.y,
+		direction: state.direction,
+	};
 }

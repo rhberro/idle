@@ -56,7 +56,22 @@ export const worldSnapshotMessageSchema = z.object(worldSnapshotMessageShape);
 
 export type WorldSnapshotMessage = z.infer<typeof worldSnapshotMessageSchema>;
 
-const serverMessageSchemas = [worldSnapshotMessageSchema] as const;
+const characterMovedMessageShape = {
+	type: z.literal("character-moved"),
+	characterId: z.string(),
+	x: z.number().int(),
+	y: z.number().int(),
+	direction: directionSchema,
+};
+
+export const characterMovedMessageSchema = z.object(characterMovedMessageShape);
+
+export type CharacterMovedMessage = z.infer<typeof characterMovedMessageSchema>;
+
+const serverMessageSchemas = [
+	worldSnapshotMessageSchema,
+	characterMovedMessageSchema,
+] as const;
 
 export const serverMessageSchema = z.discriminatedUnion(
 	"type",
