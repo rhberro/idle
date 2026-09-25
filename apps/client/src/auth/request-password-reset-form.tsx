@@ -1,5 +1,12 @@
+import { Heading, Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { requestPasswordReset } from "../auth";
+import {
+	AuthLinkButton,
+	AuthPrimaryButton,
+	AuthTextField,
+} from "./auth-form-controls";
+import { MUTED_TEXT_COLOR } from "./auth-form-styles";
 import { ErrorNotice } from "./error-notice";
 
 type RequestPasswordResetFormProps = {
@@ -37,41 +44,34 @@ export function RequestPasswordResetForm(props: RequestPasswordResetFormProps) {
 		void submitRequest();
 	}
 
+	const submitButtonLabel = isSubmitting ? "Sending..." : "Send reset link";
+
 	return (
-		<form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-			<h1 className="text-xl font-semibold">Reset your password</h1>
-			<p className="text-sm text-neutral-400">
-				Enter your Account's email and we'll send you a link to reset your
-				password.
-			</p>
-			<label
-				className="text-sm text-neutral-400"
-				htmlFor="request-password-reset-email"
-			>
-				Email
-			</label>
-			<input
-				id="request-password-reset-email"
-				type="email"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={email}
-				onChange={handleEmailChange}
-			/>
-			<ErrorNotice message={errorMessage} />
-			<button
-				type="submit"
-				disabled={isSubmitting}
-				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
-			>
-				{isSubmitting ? "Sending..." : "Send reset link"}
-			</button>
-			<button
-				type="button"
-				onClick={onSwitchToSignIn}
-				className="text-sm text-neutral-400 underline"
-			>
-				Back to sign in
-			</button>
+		<form onSubmit={handleSubmit}>
+			<Stack gap={3}>
+				<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
+					Reset your password
+				</Heading>
+				<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+					Enter your Account's email and we'll send you a link to reset your
+					password.
+				</Text>
+				<AuthTextField
+					label="Email"
+					type="email"
+					value={email}
+					onChange={handleEmailChange}
+				/>
+				<ErrorNotice message={errorMessage} />
+				<AuthPrimaryButton
+					type="submit"
+					disabled={isSubmitting}
+					label={submitButtonLabel}
+				/>
+				<AuthLinkButton onClick={onSwitchToSignIn}>
+					Back to sign in
+				</AuthLinkButton>
+			</Stack>
 		</form>
 	);
 }

@@ -1,3 +1,6 @@
+import { Text } from "@chakra-ui/react";
+import { ERROR_TEXT_COLOR } from "./auth-form-styles";
+
 type ErrorNoticeProps = {
 	message: string | undefined;
 };
@@ -7,5 +10,9 @@ export function ErrorNotice(props: ErrorNoticeProps) {
 	if (message === undefined) {
 		return undefined;
 	}
-	return <p className="text-sm text-red-400">{message}</p>;
+	return (
+		<Text fontSize="sm" color={ERROR_TEXT_COLOR}>
+			{message}
+		</Text>
+	);
 }

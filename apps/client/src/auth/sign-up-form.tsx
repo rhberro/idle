@@ -1,5 +1,11 @@
+import { Heading, Stack } from "@chakra-ui/react";
 import { useState } from "react";
 import { signUpWithPassword, WeakPasswordError } from "../auth";
+import {
+	AuthLinkButton,
+	AuthPrimaryButton,
+	AuthTextField,
+} from "./auth-form-controls";
 import { ErrorNotice } from "./error-notice";
 
 type SignUpFormProps = {
@@ -79,57 +85,44 @@ export function SignUpForm(props: SignUpFormProps) {
 		void submitSignUp();
 	}
 
+	const submitButtonLabel = isSubmitting
+		? "Creating Account..."
+		: "Create Account";
+
 	return (
-		<form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-			<h1 className="text-xl font-semibold">Create your Account</h1>
-			<label className="text-sm text-neutral-400" htmlFor="sign-up-email">
-				Email
-			</label>
-			<input
-				id="sign-up-email"
-				type="email"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={email}
-				onChange={handleEmailChange}
-			/>
-			<label className="text-sm text-neutral-400" htmlFor="sign-up-password">
-				Password
-			</label>
-			<input
-				id="sign-up-password"
-				type="password"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={password}
-				onChange={handlePasswordChange}
-			/>
-			<label
-				className="text-sm text-neutral-400"
-				htmlFor="sign-up-confirm-password"
-			>
-				Confirm password
-			</label>
-			<input
-				id="sign-up-confirm-password"
-				type="password"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={confirmPassword}
-				onChange={handleConfirmPasswordChange}
-			/>
-			<ErrorNotice message={errorMessage} />
-			<button
-				type="submit"
-				disabled={isSubmitting}
-				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
-			>
-				{isSubmitting ? "Creating Account..." : "Create Account"}
-			</button>
-			<button
-				type="button"
-				onClick={onSwitchToSignIn}
-				className="text-sm text-neutral-400 underline"
-			>
-				Already have an account? Sign in
-			</button>
+		<form onSubmit={handleSubmit}>
+			<Stack gap={3}>
+				<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
+					Create your Account
+				</Heading>
+				<AuthTextField
+					label="Email"
+					type="email"
+					value={email}
+					onChange={handleEmailChange}
+				/>
+				<AuthTextField
+					label="Password"
+					type="password"
+					value={password}
+					onChange={handlePasswordChange}
+				/>
+				<AuthTextField
+					label="Confirm password"
+					type="password"
+					value={confirmPassword}
+					onChange={handleConfirmPasswordChange}
+				/>
+				<ErrorNotice message={errorMessage} />
+				<AuthPrimaryButton
+					type="submit"
+					disabled={isSubmitting}
+					label={submitButtonLabel}
+				/>
+				<AuthLinkButton onClick={onSwitchToSignIn}>
+					Already have an account? Sign in
+				</AuthLinkButton>
+			</Stack>
 		</form>
 	);
 }

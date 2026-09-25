@@ -1,3 +1,4 @@
+import { Heading, Stack } from "@chakra-ui/react";
 import { useState } from "react";
 import {
 	EmailNotVerifiedError,
@@ -5,6 +6,12 @@ import {
 	signInWithGoogle,
 	signInWithPassword,
 } from "../auth";
+import {
+	AuthLinkButton,
+	AuthPrimaryButton,
+	AuthSecondaryButton,
+	AuthTextField,
+} from "./auth-form-controls";
 import { ErrorNotice } from "./error-notice";
 
 type SignInFormProps = {
@@ -76,59 +83,44 @@ export function SignInForm(props: SignInFormProps) {
 		void submitGoogleSignIn();
 	}
 
+	const submitButtonLabel = isSubmitting ? "Signing in..." : "Sign in";
+
 	return (
-		<form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-			<h1 className="text-xl font-semibold">Sign in</h1>
-			<label className="text-sm text-neutral-400" htmlFor="sign-in-email">
-				Email
-			</label>
-			<input
-				id="sign-in-email"
-				type="email"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={email}
-				onChange={handleEmailChange}
-			/>
-			<label className="text-sm text-neutral-400" htmlFor="sign-in-password">
-				Password
-			</label>
-			<input
-				id="sign-in-password"
-				type="password"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={password}
-				onChange={handlePasswordChange}
-			/>
-			<ErrorNotice message={errorMessage} />
-			<button
-				type="submit"
-				disabled={isSubmitting}
-				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
-			>
-				{isSubmitting ? "Signing in..." : "Sign in"}
-			</button>
-			<button
-				type="button"
-				onClick={handleGoogleSignIn}
-				disabled={isSubmitting}
-				className="rounded border border-neutral-700 px-3 py-1.5 font-medium hover:bg-neutral-800 disabled:opacity-50"
-			>
-				Sign in with Google
-			</button>
-			<button
-				type="button"
-				onClick={onForgotPassword}
-				className="text-sm text-neutral-400 underline"
-			>
-				Forgot password?
-			</button>
-			<button
-				type="button"
-				onClick={onSwitchToSignUp}
-				className="text-sm text-neutral-400 underline"
-			>
-				Don't have an account? Sign up
-			</button>
+		<form onSubmit={handleSubmit}>
+			<Stack gap={3}>
+				<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
+					Sign in
+				</Heading>
+				<AuthTextField
+					label="Email"
+					type="email"
+					value={email}
+					onChange={handleEmailChange}
+				/>
+				<AuthTextField
+					label="Password"
+					type="password"
+					value={password}
+					onChange={handlePasswordChange}
+				/>
+				<ErrorNotice message={errorMessage} />
+				<AuthPrimaryButton
+					type="submit"
+					disabled={isSubmitting}
+					label={submitButtonLabel}
+				/>
+				<AuthSecondaryButton
+					disabled={isSubmitting}
+					label="Sign in with Google"
+					onClick={handleGoogleSignIn}
+				/>
+				<AuthLinkButton onClick={onForgotPassword}>
+					Forgot password?
+				</AuthLinkButton>
+				<AuthLinkButton onClick={onSwitchToSignUp}>
+					Don't have an account? Sign up
+				</AuthLinkButton>
+			</Stack>
 		</form>
 	);
 }

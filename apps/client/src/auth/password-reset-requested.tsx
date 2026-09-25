@@ -1,3 +1,7 @@
+import { Heading, Span, Stack, Text } from "@chakra-ui/react";
+import { AuthLinkButton } from "./auth-form-controls";
+import { EMPHASIZED_TEXT_COLOR, MUTED_TEXT_COLOR } from "./auth-form-styles";
+
 type PasswordResetRequestedProps = {
 	email: string;
 	onSwitchToSignIn: () => void;
@@ -7,20 +11,20 @@ export function PasswordResetRequested(props: PasswordResetRequestedProps) {
 	const { email, onSwitchToSignIn } = props;
 
 	return (
-		<div className="flex flex-col gap-3">
-			<h1 className="text-xl font-semibold">Check your email</h1>
-			<p className="text-sm text-neutral-400">
+		<Stack gap={3}>
+			<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
+				Check your email
+			</Heading>
+			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
 				If an Account exists for{" "}
-				<span className="font-medium text-neutral-200">{email}</span>, we've
-				sent a link to reset its password.
-			</p>
-			<button
-				type="button"
-				onClick={onSwitchToSignIn}
-				className="text-sm text-neutral-400 underline"
-			>
+				<Span fontWeight="medium" color={EMPHASIZED_TEXT_COLOR}>
+					{email}
+				</Span>
+				, we've sent a link to reset its password.
+			</Text>
+			<AuthLinkButton onClick={onSwitchToSignIn}>
 				Back to sign in
-			</button>
-		</div>
+			</AuthLinkButton>
+		</Stack>
 	);
 }

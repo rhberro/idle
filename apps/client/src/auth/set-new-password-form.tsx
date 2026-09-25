@@ -1,5 +1,7 @@
+import { Heading, Stack } from "@chakra-ui/react";
 import { useState } from "react";
 import { confirmPasswordReset, WeakPasswordError } from "../auth";
+import { AuthPrimaryButton, AuthTextField } from "./auth-form-controls";
 import { ErrorNotice } from "./error-notice";
 
 type SetNewPasswordFormProps = {
@@ -71,43 +73,33 @@ export function SetNewPasswordForm(props: SetNewPasswordFormProps) {
 		void submitNewPassword();
 	}
 
+	const submitButtonLabel = isSubmitting ? "Saving..." : "Set new password";
+
 	return (
-		<form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-			<h1 className="text-xl font-semibold">Set a new password</h1>
-			<label
-				className="text-sm text-neutral-400"
-				htmlFor="set-new-password-password"
-			>
-				New password
-			</label>
-			<input
-				id="set-new-password-password"
-				type="password"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={password}
-				onChange={handlePasswordChange}
-			/>
-			<label
-				className="text-sm text-neutral-400"
-				htmlFor="set-new-password-confirm-password"
-			>
-				Confirm new password
-			</label>
-			<input
-				id="set-new-password-confirm-password"
-				type="password"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={confirmPassword}
-				onChange={handleConfirmPasswordChange}
-			/>
-			<ErrorNotice message={errorMessage} />
-			<button
-				type="submit"
-				disabled={isSubmitting}
-				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
-			>
-				{isSubmitting ? "Saving..." : "Set new password"}
-			</button>
+		<form onSubmit={handleSubmit}>
+			<Stack gap={3}>
+				<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
+					Set a new password
+				</Heading>
+				<AuthTextField
+					label="New password"
+					type="password"
+					value={password}
+					onChange={handlePasswordChange}
+				/>
+				<AuthTextField
+					label="Confirm new password"
+					type="password"
+					value={confirmPassword}
+					onChange={handleConfirmPasswordChange}
+				/>
+				<ErrorNotice message={errorMessage} />
+				<AuthPrimaryButton
+					type="submit"
+					disabled={isSubmitting}
+					label={submitButtonLabel}
+				/>
+			</Stack>
 		</form>
 	);
 }

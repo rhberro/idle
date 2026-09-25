@@ -1,5 +1,8 @@
+import { Heading, Span, Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { resendVerificationEmail } from "../auth";
+import { AuthSecondaryButton } from "./auth-form-controls";
+import { EMPHASIZED_TEXT_COLOR, MUTED_TEXT_COLOR } from "./auth-form-styles";
 
 type PendingVerificationProps = {
 	email: string;
@@ -25,28 +28,34 @@ export function PendingVerification(props: PendingVerificationProps) {
 		}
 	}
 
+	const resendButtonLabel = isResending
+		? "Resending..."
+		: "Resend verification email";
 	const resendNotice =
 		resendMessage === undefined ? undefined : (
-			<p className="text-sm text-neutral-400">{resendMessage}</p>
+			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+				{resendMessage}
+			</Text>
 		);
 
 	return (
-		<div className="flex flex-col gap-3">
-			<h1 className="text-xl font-semibold">Check your email</h1>
-			<p className="text-sm text-neutral-400">
+		<Stack gap={3}>
+			<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
+				Check your email
+			</Heading>
+			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
 				We sent a verification link to{" "}
-				<span className="font-medium text-neutral-200">{email}</span>. Follow it
-				to verify your Account.
-			</p>
-			<button
-				type="button"
-				onClick={handleResend}
+				<Span fontWeight="medium" color={EMPHASIZED_TEXT_COLOR}>
+					{email}
+				</Span>
+				. Follow it to verify your Account.
+			</Text>
+			<AuthSecondaryButton
 				disabled={isResending}
-				className="rounded border border-neutral-700 px-3 py-1.5 font-medium hover:bg-neutral-800 disabled:opacity-50"
-			>
-				{isResending ? "Resending..." : "Resend verification email"}
-			</button>
+				label={resendButtonLabel}
+				onClick={handleResend}
+			/>
 			{resendNotice}
-		</div>
+		</Stack>
 	);
 }
