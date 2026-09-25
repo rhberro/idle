@@ -1,4 +1,3 @@
-import type { ChatBroadcast } from "@idle/shared";
 import type { ServerWebSocket } from "bun";
 import type { ConnectionData } from "./connection-auth";
 
@@ -41,16 +40,4 @@ export function recordSend(characterId: string, intervalMs: number): void {
 		return;
 	}
 	state.nextAllowedSendAt = Date.now() + intervalMs;
-}
-
-export function broadcastToOthers(
-	excludeCharacterId: string,
-	message: ChatBroadcast,
-): void {
-	const payload = JSON.stringify(message);
-	for (const state of connections.values()) {
-		if (state.ws.data.characterId !== excludeCharacterId) {
-			state.ws.send(payload);
-		}
-	}
 }

@@ -151,11 +151,7 @@ test("a Character the Account doesn't own is rejected", async function () {
 	expect(result.outcome).toBe("rejected");
 });
 
-// This also covers "a connection authenticated to a different World's chat process never
-// receives it": a process only ever accepts connections for its own WORLD_ID, so a Character
-// from another World can never join this process's connection registry to begin with, and
-// therefore can never be on the receiving end of a broadcast from it.
-test("a Character belonging to a different World is rejected", async function () {
+test("a Character belonging to any World can connect — this service is multi-tenant, not scoped to one World", async function () {
 	const admin = createAdminClient();
 	const { data: otherWorld, error } = await admin
 		.from("worlds")
@@ -174,7 +170,10 @@ test("a Character belonging to a different World is rejected", async function ()
 	const token = await fetchAccessToken(account.email);
 
 	const result = await connectChatSocket(buildWsUrl(token, character.id));
-	expect(result.outcome).toBe("rejected");
+	expect(result.outcome).toBe("open");
+	if (result.outcome === "open") {
+		result.socket.close();
+	}
 });
 
 test("a second connection for the same Character closes the first", async function () {
@@ -244,6 +243,58 @@ test("a message sent by one connection is broadcast to another connection in the
 		text: "hello everyone",
 		sentAt: expect.any(Number),
 	});
+
+	connectionA.socket.close();
+	connectionB.socket.close();
+});
+
+test("a message sent in one World is never broadcast to a connection in a different World", async function () {
+	const admin = createAdminClient();
+	const worldA = await fetchSeedWorldId();
+	const { data: worldB, error } = await admin
+		.from("worlds")
+		.insert({ name: "Other World" })
+		.select("id")
+		.single();
+	if (error) {
+		throw error;
+	}
+
+	const accountA = await createVerifiedTestAccount();
+	const characterA = await createTestCharacter(
+		accountA.id,
+		worldA,
+		`SpeakerA_${randomNameSuffix()}`,
+	);
+	const tokenA = await fetchAccessToken(accountA.email);
+
+	const accountB = await createVerifiedTestAccount();
+	const characterB = await createTestCharacter(
+		accountB.id,
+		worldB.id,
+		`ListenerB_${randomNameSuffix()}`,
+	);
+	const tokenB = await fetchAccessToken(accountB.email);
+
+	const connectionA = await connectChatSocket(
+		buildWsUrl(tokenA, characterA.id),
+	);
+	if (connectionA.outcome !== "open") {
+		throw new Error("expected A's connection to open");
+	}
+	const connectionB = await connectChatSocket(
+		buildWsUrl(tokenB, characterB.id),
+	);
+	if (connectionB.outcome !== "open") {
+		throw new Error("expected B's connection to open");
+	}
+
+	sendGlobalMessage(connectionA.socket, "hello world A");
+	const attempt = await waitForMessageOrTimeout(
+		connectionB.socket,
+		NO_MESSAGE_WAIT_MS,
+	);
+	expect(attempt).toBe("timeout");
 
 	connectionA.socket.close();
 	connectionB.socket.close();

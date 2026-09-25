@@ -5,18 +5,20 @@ import {
 } from "@idle/shared";
 import type { Server, ServerWebSocket } from "bun";
 import {
-	broadcastToOthers,
 	canSend,
 	recordSend,
 	registerConnection,
 	unregisterConnection,
 } from "./chat-state";
 import { authenticateConnection, type ConnectionData } from "./connection-auth";
-import { getEnv, getPort } from "./env";
+import { getPort } from "./env";
 import { logger } from "./logger";
 
 const port = getPort(4003);
-const worldId = getEnv("WORLD_ID");
+
+function chatTopicForWorld(worldId: string): string {
+	return `chat:${worldId}`;
+}
 
 const healthPayload = { status: "ok", service: "chat" };
 
@@ -34,7 +36,7 @@ async function handleChatFetch(req: Request, server: Server<ConnectionData>) {
 		return new Response("Not Found", notFoundInit);
 	}
 
-	const connectionData = await authenticateConnection(req, worldId);
+	const connectionData = await authenticateConnection(req);
 	if (connectionData === undefined) {
 		return new Response("Unauthorized", unauthorizedInit);
 	}
@@ -48,6 +50,7 @@ async function handleChatFetch(req: Request, server: Server<ConnectionData>) {
 function handleChatOpen(ws: ServerWebSocket<ConnectionData>) {
 	const previousConnection = registerConnection(ws);
 	previousConnection?.close();
+	ws.subscribe(chatTopicForWorld(ws.data.worldId));
 
 	const logPayload = { characterId: ws.data.characterId };
 	logger.info(logPayload, "character joined chat");
@@ -57,7 +60,7 @@ function handleGlobalChatMessage(
 	ws: ServerWebSocket<ConnectionData>,
 	text: string,
 ) {
-	const { characterId, name } = ws.data;
+	const { characterId, name, worldId } = ws.data;
 	if (!canSend(characterId)) {
 		return;
 	}
@@ -70,7 +73,7 @@ function handleGlobalChatMessage(
 		text,
 		sentAt: Date.now(),
 	};
-	broadcastToOthers(characterId, broadcastMessage);
+	ws.publish(chatTopicForWorld(worldId), JSON.stringify(broadcastMessage));
 }
 
 function handleChatMessage(

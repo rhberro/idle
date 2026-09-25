@@ -4,11 +4,11 @@ export type ConnectionData = {
 	characterId: string;
 	accountId: string;
 	name: string;
+	worldId: string;
 };
 
 export async function authenticateConnection(
 	req: Request,
-	worldId: string,
 ): Promise<ConnectionData | undefined> {
 	const url = new URL(req.url);
 	const token = url.searchParams.get("token");
@@ -35,13 +35,11 @@ export async function authenticateConnection(
 	if (character.account_id !== userData.user.id) {
 		return undefined;
 	}
-	if (character.world_id !== worldId) {
-		return undefined;
-	}
 
 	return {
 		characterId: character.id,
 		accountId: character.account_id,
 		name: character.name,
+		worldId: character.world_id,
 	};
 }
