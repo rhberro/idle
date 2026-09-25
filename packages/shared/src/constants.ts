@@ -1,5 +1,7 @@
 export const WORLD_TICK_MS = 500;
 
+export const CHAT_MESSAGE_INTERVAL_MS = 10000;
+
 export const GRID_TILE_SIZE = 32;
 
 export const WORLD_SIZE_TILES = 70;
