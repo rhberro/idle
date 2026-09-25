@@ -1,6 +1,7 @@
 import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react";
 
 const themeConfig = {
+	strictTokens: true,
 	theme: {
 		tokens: {
 			fonts: {

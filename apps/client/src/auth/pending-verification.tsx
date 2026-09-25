@@ -2,7 +2,6 @@ import { Heading, Span, Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { resendVerificationEmail } from "../auth";
 import { AuthSecondaryButton } from "./auth-form-controls";
-import { EMPHASIZED_TEXT_COLOR, MUTED_TEXT_COLOR } from "./auth-form-styles";
 
 type PendingVerificationProps = {
 	email: string;
@@ -33,7 +32,7 @@ export function PendingVerification(props: PendingVerificationProps) {
 		: "Resend verification email";
 	const resendNotice =
 		resendMessage === undefined ? undefined : (
-			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+			<Text fontSize="sm" color="fg.muted">
 				{resendMessage}
 			</Text>
 		);
@@ -43,9 +42,9 @@ export function PendingVerification(props: PendingVerificationProps) {
 			<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
 				Check your email
 			</Heading>
-			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+			<Text fontSize="sm" color="fg.muted">
 				We sent a verification link to{" "}
-				<Span fontWeight="medium" color={EMPHASIZED_TEXT_COLOR}>
+				<Span fontWeight="medium" color="fg">
 					{email}
 				</Span>
 				. Follow it to verify your Account.

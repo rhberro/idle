@@ -136,6 +136,10 @@ export function GameCanvas(props: GameCanvasProps) {
 		}
 
 		async function setup(element: HTMLDivElement) {
+			// PixiJS canvas clear color is a JS-side value, not a CSS token: it
+			// exists to fill the sliver outside the world bounds that appears at
+			// certain camera offsets/resizes. Picked to match the dark theme's
+			// `bg` token.
 			const pixiAppOptions = {
 				background: "#0a0a0a",
 				resizeTo: element,

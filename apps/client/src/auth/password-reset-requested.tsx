@@ -1,6 +1,5 @@
 import { Heading, Span, Stack, Text } from "@chakra-ui/react";
 import { AuthLinkButton } from "./auth-form-controls";
-import { EMPHASIZED_TEXT_COLOR, MUTED_TEXT_COLOR } from "./auth-form-styles";
 
 type PasswordResetRequestedProps = {
 	email: string;
@@ -15,9 +14,9 @@ export function PasswordResetRequested(props: PasswordResetRequestedProps) {
 			<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
 				Check your email
 			</Heading>
-			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+			<Text fontSize="sm" color="fg.muted">
 				If an Account exists for{" "}
-				<Span fontWeight="medium" color={EMPHASIZED_TEXT_COLOR}>
+				<Span fontWeight="medium" color="fg">
 					{email}
 				</Span>
 				, we've sent a link to reset its password.

@@ -4,12 +4,6 @@ import {
 	Portal,
 	useFloatingPanelContext,
 } from "@chakra-ui/react";
-import {
-	FLOATING_WINDOW_BORDER,
-	FLOATING_WINDOW_CONTROL_BUTTON_SIZE,
-	FLOATING_WINDOW_CONTROL_BUTTON_VARIANT,
-	FLOATING_WINDOW_TEXT_COLOR,
-} from "./floating-window";
 
 type ChatSettingsMenuProps = {
 	showTimestamps: boolean;
@@ -19,7 +13,6 @@ type ChatSettingsMenuProps = {
 
 const TIMESTAMP_CHECKBOX_VALUE = "show-timestamps";
 const RESET_TO_DEFAULT_VALUE = "reset-to-default";
-const SETTINGS_MENU_BACKGROUND_COLOR = "#262626";
 
 function SettingsIcon() {
 	return (
@@ -58,22 +51,13 @@ export function ChatSettingsMenu(props: ChatSettingsMenuProps) {
 	return (
 		<Menu.Root>
 			<Menu.Trigger asChild>
-				<IconButton
-					aria-label="Chat settings"
-					size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
-					variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
-				>
+				<IconButton aria-label="Chat settings" size="2xs" variant="ghost">
 					<SettingsIcon />
 				</IconButton>
 			</Menu.Trigger>
 			<Portal>
 				<Menu.Positioner>
-					<Menu.Content
-						bg={SETTINGS_MENU_BACKGROUND_COLOR}
-						border={FLOATING_WINDOW_BORDER}
-						color={FLOATING_WINDOW_TEXT_COLOR}
-						fontSize="sm"
-					>
+					<Menu.Content>
 						<Menu.CheckboxItem
 							value={TIMESTAMP_CHECKBOX_VALUE}
 							checked={showTimestamps}
@@ -82,7 +66,7 @@ export function ChatSettingsMenu(props: ChatSettingsMenuProps) {
 							Display messages timestamp
 							<Menu.ItemIndicator />
 						</Menu.CheckboxItem>
-						<Menu.Separator borderColor={FLOATING_WINDOW_BORDER} />
+						<Menu.Separator />
 						<Menu.Item
 							value={RESET_TO_DEFAULT_VALUE}
 							onSelect={handleResetToDefaultSelect}

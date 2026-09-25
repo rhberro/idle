@@ -6,7 +6,6 @@ import {
 	AuthPrimaryButton,
 	AuthTextField,
 } from "./auth-form-controls";
-import { MUTED_TEXT_COLOR } from "./auth-form-styles";
 import { ErrorNotice } from "./error-notice";
 
 type RequestPasswordResetFormProps = {
@@ -52,7 +51,7 @@ export function RequestPasswordResetForm(props: RequestPasswordResetFormProps) {
 				<Heading as="h1" fontSize="xl" fontWeight="semibold" color="inherit">
 					Reset your password
 				</Heading>
-				<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+				<Text fontSize="sm" color="fg.muted">
 					Enter your Account's email and we'll send you a link to reset your
 					password.
 				</Text>

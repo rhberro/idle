@@ -32,13 +32,6 @@ export type FloatingWindowProps = {
 	children: ReactNode;
 };
 
-export const FLOATING_WINDOW_BACKGROUND_COLOR = "#171717";
-export const FLOATING_WINDOW_BORDER = "1px solid #262626";
-export const FLOATING_WINDOW_TEXT_COLOR = "#f5f5f5";
-const HEADER_TEXT_COLOR = "#a3a3a3";
-export const FLOATING_WINDOW_CONTROL_BUTTON_SIZE = "2xs";
-export const FLOATING_WINDOW_CONTROL_BUTTON_VARIANT = "ghost";
-
 type IconGlyphProps = {
 	label: string;
 	strokeLinecap?: "round";
@@ -238,21 +231,13 @@ export function FloatingWindow(props: FloatingWindowProps) {
 
 	const minimizeControl = isMinimized ? (
 		<FloatingPanel.StageTrigger stage="default" asChild>
-			<IconButton
-				aria-label={restoreLabel}
-				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
-				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
-			>
+			<IconButton aria-label={restoreLabel} size="2xs" variant="ghost">
 				<RestoreIcon />
 			</IconButton>
 		</FloatingPanel.StageTrigger>
 	) : (
 		<FloatingPanel.StageTrigger stage="minimized" asChild>
-			<IconButton
-				aria-label={minimizeLabel}
-				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
-				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
-			>
+			<IconButton aria-label={minimizeLabel} size="2xs" variant="ghost">
 				<MinimizeIcon />
 			</IconButton>
 		</FloatingPanel.StageTrigger>
@@ -260,21 +245,13 @@ export function FloatingWindow(props: FloatingWindowProps) {
 
 	const maximizeControl = isMaximized ? (
 		<FloatingPanel.StageTrigger stage="default" asChild>
-			<IconButton
-				aria-label={restoreLabel}
-				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
-				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
-			>
+			<IconButton aria-label={restoreLabel} size="2xs" variant="ghost">
 				<RestoreIcon />
 			</IconButton>
 		</FloatingPanel.StageTrigger>
 	) : (
 		<FloatingPanel.StageTrigger stage="maximized" asChild>
-			<IconButton
-				aria-label={maximizeLabel}
-				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
-				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
-			>
+			<IconButton aria-label={maximizeLabel} size="2xs" variant="ghost">
 				<MaximizeIcon />
 			</IconButton>
 		</FloatingPanel.StageTrigger>
@@ -304,16 +281,16 @@ export function FloatingWindow(props: FloatingWindowProps) {
 			<Portal>
 				<FloatingPanel.Positioner>
 					<FloatingPanel.Content
-						bg={FLOATING_WINDOW_BACKGROUND_COLOR}
-						border={FLOATING_WINDOW_BORDER}
-						borderRadius="4px"
-						color={FLOATING_WINDOW_TEXT_COLOR}
+						bg="bg.panel"
+						borderWidth="1px"
+						borderColor="border"
 						overflow="hidden"
 					>
 						<SizeRestorer pendingRestoreSize={pendingRestoreSizeRef} />
 						{stageInitializer}
 						<FloatingPanel.Header
-							borderBottom={FLOATING_WINDOW_BORDER}
+							borderBottomWidth="1px"
+							borderColor="border"
 							px={2}
 							py={1}
 						>
@@ -321,10 +298,10 @@ export function FloatingWindow(props: FloatingWindowProps) {
 								display="flex"
 								alignItems="center"
 								gap={2}
-								color={HEADER_TEXT_COLOR}
+								color="fg.muted"
 							>
 								<GripIcon />
-								<FloatingPanel.Title fontSize="sm" fontWeight="medium">
+								<FloatingPanel.Title fontSize="sm">
 									{title}
 								</FloatingPanel.Title>
 							</FloatingPanel.DragTrigger>
@@ -335,8 +312,8 @@ export function FloatingWindow(props: FloatingWindowProps) {
 								<FloatingPanel.CloseTrigger asChild>
 									<IconButton
 										aria-label={closeLabel}
-										size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
-										variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
+										size="2xs"
+										variant="ghost"
 									>
 										<CloseIcon />
 									</IconButton>

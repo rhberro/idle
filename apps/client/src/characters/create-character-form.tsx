@@ -2,14 +2,6 @@ import { Button, chakra, Field, Input } from "@chakra-ui/react";
 import { useState } from "react";
 import { createCharacter, InvalidCharacterNameError } from "../auth";
 import { ErrorNotice } from "../auth/error-notice";
-import {
-	borderColor,
-	mutedTextColor,
-	primaryButtonBackground,
-	primaryButtonHoverBackground,
-	primaryTextColor,
-	surfaceBackground,
-} from "./colors";
 
 type CreateCharacterFormProps = {
 	onCreated: (characterId: string) => void;
@@ -20,8 +12,6 @@ const invalidNameMessage =
 const unexpectedErrorMessage = "Something went wrong. Please try again.";
 const submittingLabel = "Creating...";
 const idleLabel = "Create character";
-
-const primaryButtonHoverStyle = { bg: primaryButtonHoverBackground };
 
 export function CreateCharacterForm(props: CreateCharacterFormProps) {
 	const { onCreated } = props;
@@ -68,12 +58,7 @@ export function CreateCharacterForm(props: CreateCharacterFormProps) {
 			gap="2"
 		>
 			<Field.Root gap="2">
-				<Field.Label
-					htmlFor="new-character-name"
-					textStyle="sm"
-					fontWeight="normal"
-					color={mutedTextColor}
-				>
+				<Field.Label htmlFor="new-character-name" textStyle="sm">
 					New character name
 				</Field.Label>
 				<Input
@@ -81,31 +66,11 @@ export function CreateCharacterForm(props: CreateCharacterFormProps) {
 					type="text"
 					value={name}
 					onChange={handleNameChange}
-					fontSize="md"
-					color={primaryTextColor}
-					borderColor={borderColor}
-					bg={surfaceBackground}
-					borderRadius="sm"
-					px="2"
-					py="1"
-					h="auto"
+					size="md"
 				/>
 			</Field.Root>
 			<ErrorNotice message={errorMessage} />
-			<Button
-				type="submit"
-				disabled={isSubmitting}
-				variant="plain"
-				fontSize="md"
-				color={primaryTextColor}
-				bg={primaryButtonBackground}
-				_hover={primaryButtonHoverStyle}
-				borderWidth="0"
-				borderRadius="sm"
-				px="3"
-				py="1.5"
-				h="auto"
-			>
+			<Button type="submit" disabled={isSubmitting} variant="plain" size="md">
 				{submitButtonLabel}
 			</Button>
 		</chakra.form>

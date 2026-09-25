@@ -19,7 +19,7 @@ Built on Bun end to end, with one deliberate per-app exception for `apps/website
 
 - `Bun.serve()` for every HTTP/WebSocket process (client and each backend service) — `apps/website` is the exception, see below
 - Supabase (Postgres, Auth, Realtime, Storage) via `supabase-js`/`@supabase/ssr` for all persistence and auth
-- `apps/client`: HTML imports + a bundled frontend (React, PixiJS for the world view, Tailwind, Zustand)
+- `apps/client`: HTML imports + a bundled frontend (React, PixiJS for the world view, Chakra UI v3 with `strictTokens`, Zustand)
 - `apps/website`: Next.js (App Router) + Chakra UI — its own framework/dev server, not `Bun.serve()`/HTML imports; still run via Bun (`bun run dev`, etc.)
 - Biome for linting/formatting, `bun test` for tests
 

@@ -31,9 +31,6 @@ import {
 	saveShowTimestampsPreference,
 } from "./chat-window-storage";
 import {
-	FLOATING_WINDOW_BACKGROUND_COLOR,
-	FLOATING_WINDOW_BORDER,
-	FLOATING_WINDOW_TEXT_COLOR,
 	FloatingWindow,
 	type FloatingWindowPosition,
 	type FloatingWindowSize,
@@ -52,15 +49,6 @@ type ChatChannel = {
 const globalChannel: ChatChannel = { id: "global", label: "Global" };
 const chatChannels: ChatChannel[] = [globalChannel];
 const defaultActiveChannelId = globalChannel.id;
-
-const PANEL_BORDER = "1px solid #262626";
-const FIELD_BACKGROUND_COLOR = "#262626";
-const FIELD_BORDER_COLOR = "#404040";
-const MUTED_TEXT_COLOR = "#a3a3a3";
-const SEND_BUTTON_BACKGROUND_COLOR = "#047857";
-const SEND_BUTTON_HOVER_BACKGROUND_COLOR = "#059669";
-const SEND_BUTTON_HOVER_STYLE = { bg: SEND_BUTTON_HOVER_BACKGROUND_COLOR };
-const DISABLED_BUTTON_STYLE = { opacity: 0.5 };
 
 const DEFAULT_WINDOW_SIZE: FloatingWindowSize = { width: 320, height: 360 };
 const MIN_WINDOW_SIZE: FloatingWindowSize = { width: 260, height: 220 };
@@ -354,9 +342,6 @@ export function ChatPanel(props: ChatPanelProps) {
 			left={4}
 			bottom={4}
 			rounded="full"
-			bg={FLOATING_WINDOW_BACKGROUND_COLOR}
-			border={FLOATING_WINDOW_BORDER}
-			color={FLOATING_WINDOW_TEXT_COLOR}
 			onClick={reopenWindow}
 		>
 			<ChatBubbleIcon />
@@ -372,7 +357,7 @@ export function ChatPanel(props: ChatPanelProps) {
 		);
 		const messageKey = `${message.characterId}-${message.sentAt}`;
 		return (
-			<Text key={messageKey} fontSize="sm" color={FLOATING_WINDOW_TEXT_COLOR}>
+			<Text key={messageKey} fontSize="sm">
 				{formattedMessage}
 			</Text>
 		);
@@ -394,11 +379,6 @@ export function ChatPanel(props: ChatPanelProps) {
 			type="submit"
 			aria-label="Send message"
 			disabled={isOnCooldown}
-			bg={SEND_BUTTON_BACKGROUND_COLOR}
-			color="inherit"
-			rounded="4px"
-			_hover={SEND_BUTTON_HOVER_STYLE}
-			_disabled={DISABLED_BUTTON_STYLE}
 		>
 			<SendIcon />
 		</IconButton>
@@ -413,12 +393,7 @@ export function ChatPanel(props: ChatPanelProps) {
 			</TooltipTrigger>
 			<Portal>
 				<TooltipPositioner>
-					<TooltipContent
-						bg={FIELD_BACKGROUND_COLOR}
-						color={FLOATING_WINDOW_TEXT_COLOR}
-					>
-						{cooldownTooltipMessage}
-					</TooltipContent>
+					<TooltipContent>{cooldownTooltipMessage}</TooltipContent>
 				</TooltipPositioner>
 			</Portal>
 		</TooltipRoot>
@@ -446,27 +421,17 @@ export function ChatPanel(props: ChatPanelProps) {
 				titleBarControls={settingsMenu}
 			>
 				<Tabs.Root value={activeChannelId} onValueChange={handleChannelChange}>
-					<Tabs.List
-						borderBottom={PANEL_BORDER}
-						px={2}
-						color={MUTED_TEXT_COLOR}
-					>
-						{renderedChannelTabs}
-					</Tabs.List>
+					<Tabs.List px={2}>{renderedChannelTabs}</Tabs.List>
 				</Tabs.Root>
 				<Stack flex="1" minH={0} gap={1} overflowY="auto" px={3} py={2}>
 					{renderedMessages}
 					<div ref={messagesEndRef} />
 				</Stack>
 				<form onSubmit={handleFormSubmit}>
-					<Flex gap={2} borderTop={PANEL_BORDER} p={2}>
+					<Flex gap={2} p={2}>
 						<Input
 							value={messageDraft}
 							onChange={handleMessageDraftChange}
-							bg={FIELD_BACKGROUND_COLOR}
-							borderColor={FIELD_BORDER_COLOR}
-							rounded="4px"
-							color="inherit"
 							placeholder="Message Global chat…"
 						/>
 						{sendControl}

@@ -1,0 +1,17 @@
+# Drop the Tailwind-faithful palette and adopt Chakra UI defaults
+
+ADR 0004 committed us to removing Tailwind from `apps/client` and porting the existing screens (auth forms, character list/creation, the game-canvas wrapper) "faithfully — same behavior and appearance, no redesign." We did that, but the port captured the wrong target: instead of adopting Chakra's design tokens, it reproduced Tailwind's hardcoded palette (neutral / emerald, in `oklch()`) and a small set of bespoke hex constants (`auth-form-styles.ts`, `characters/colors.ts`) at the call site. The two `colors.ts` modules became a hand-rolled, duplicated, partially-Tailwind-flavoured token system running alongside Chakra's own — five files holding the same `#a3a3a3`, two files holding different emerald ramps, and every screen deciding what "muted" meant for itself.
+
+That scaffolding has now been removed. `apps/client/src/chakra-system.ts` is a one-line `createSystem(defaultConfig, defineConfig({ strictTokens: true }))` — no custom tokens, no custom palette, no custom theme. Every styling decision is a Chakra semantic token (`bg`, `fg.muted`, `border`, `border.emphasized`, `bg.muted`, `fg.error`) or a built-in Chakra variant (`variant="plain"` for the character rows, `variant="outline"` for secondary buttons, `variant="ghost"` for the floating-window chrome). `apps/website/src/theme.ts` enables `strictTokens: true` alongside its existing font customization, so the website is held to the same rule even though it's already token-only.
+
+Two consequences worth recording:
+
+- **The client is now dark by intent.** `<html class="dark">` in `apps/client/index.html` selects the `_dark` side of every default semantic token (`bg` → black, `fg` → `gray.50`, `border` → `gray.800`, …). No `next-themes`, no provider, no toggle. The game UI is dark-first; if a toggle is ever wanted, it can be added then. The website stays light-only as before — see the "Color mode is currently disabled" paragraph in `docs/architecture.md`.
+
+- **The visual drift is the point.** `#171717` was an approximation of Chakra's `bg.muted` dark (`gray.900` = `#18181b`) that didn't match anything else in the palette. Replacing it with `bg` (dark: `#000`) means the shell is now consistent with every other surface and shifts only where the source palette is. The Tailwind emerald that marked "this character is selected" is gone — the selected row is now `bg.muted` + `border.emphasized` on the default gray ramp. If a green selection accent is wanted later, it should be a deliberate `colorPalette="green"` decision, not a leftover from a Tailwind port.
+
+The structural sizing props inside the floating window and chat composer (`px`, `py`, `gap`, `fontSize="sm"` on inner text, `rounded="full"` on the reopen button) were kept — they're ergonomics for a 320px-wide overlay over a game canvas, not styling preferences. The `size="2xs" variant="ghost"` pair on the floating-window chrome IconButtons is also kept: it's the right size for a compact drag handle and uses Chakra's own variants.
+
+Strict mode (`strictTokens: true`) is enabled in both apps' Chakra configs, so raw hex and unregistered tokens are a TypeScript error from here on. The only remaining hex literal in the client is `#0a0a0a` in `game-canvas.tsx`, which is the PixiJS canvas clear color — a JS-side value passed to the GPU, not a CSS token, and intentionally outside the design system.
+
+This supersedes the "pixel-faithful" clause of ADR 0004, not the rest of it (we still don't share a theme with `apps/website`, fonts differ, etc.).

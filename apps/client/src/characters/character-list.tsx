@@ -2,18 +2,6 @@ import { Button, Heading, Stack, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { type CharacterSummary, listCharacters, signOut } from "../auth";
 import { ErrorNotice } from "../auth/error-notice";
-import {
-	borderColor,
-	emphasisTextColor,
-	errorTextColor,
-	mutedTextColor,
-	primaryButtonBackground,
-	primaryButtonHoverBackground,
-	primaryTextColor,
-	selectedBackground,
-	selectedBorderColor,
-	surfaceBackground,
-} from "./colors";
 import { CreateCharacterForm } from "./create-character-form";
 
 type CharacterListProps = {
@@ -34,23 +22,12 @@ const headingLineHeight = "1.75rem";
 
 const baseButtonStyle = {
 	variant: "plain",
-	fontSize: "md",
-	color: primaryTextColor,
-	borderRadius: "sm",
-	h: "auto",
-} as const;
-
-const primaryButtonHoverStyle = { bg: primaryButtonHoverBackground };
-const surfaceHoverStyle = { bg: surfaceBackground };
-
-const selectedRowStyle = {
-	borderColor: selectedBorderColor,
-	bg: selectedBackground,
-} as const;
-
-const unselectedRowStyle = {
-	borderColor: borderColor,
-	_hover: surfaceHoverStyle,
+	w: "full",
+	justifyContent: "flex-start",
+	borderWidth: "1px",
+	fontWeight: "normal",
+	px: "3",
+	py: "2",
 } as const;
 
 export function CharacterList(props: CharacterListProps) {
@@ -88,7 +65,6 @@ export function CharacterList(props: CharacterListProps) {
 
 	function renderCharacterRow(character: CharacterSummary) {
 		const isSelected = character.id === selectedCharacterId;
-		const rowStyle = isSelected ? selectedRowStyle : unselectedRowStyle;
 
 		function handleClick() {
 			selectCharacter(character.id);
@@ -100,13 +76,12 @@ export function CharacterList(props: CharacterListProps) {
 				type="button"
 				onClick={handleClick}
 				{...baseButtonStyle}
-				w="full"
-				justifyContent="flex-start"
-				fontWeight="normal"
-				borderWidth="1px"
-				px="3"
-				py="2"
-				{...rowStyle}
+				{...(isSelected
+					? { bg: "bg.muted", borderColor: "border.emphasized" }
+					: {
+							borderColor: "border",
+							_hover: { bg: "bg.muted" },
+						})}
 			>
 				{character.name}
 			</Button>
@@ -145,19 +120,19 @@ export function CharacterList(props: CharacterListProps) {
 	let listContent: React.ReactNode;
 	if (loadState.kind === "loading") {
 		listContent = (
-			<Text textStyle="sm" color={mutedTextColor}>
+			<Text textStyle="sm" color="fg.muted">
 				Loading characters…
 			</Text>
 		);
 	} else if (loadState.kind === "error") {
 		listContent = (
-			<Text textStyle="sm" color={errorTextColor}>
+			<Text textStyle="sm" color="fg.error">
 				Could not load your characters. Please try again later.
 			</Text>
 		);
 	} else if (loadState.characters.length === 0) {
 		listContent = (
-			<Text textStyle="sm" color={mutedTextColor}>
+			<Text textStyle="sm" color="fg.muted">
 				You don't have any characters yet.
 			</Text>
 		);
@@ -168,16 +143,7 @@ export function CharacterList(props: CharacterListProps) {
 
 	const enterWorldButton =
 		selectedCharacterId === undefined ? undefined : (
-			<Button
-				type="button"
-				onClick={handleEnterWorld}
-				{...baseButtonStyle}
-				bg={primaryButtonBackground}
-				_hover={primaryButtonHoverStyle}
-				borderWidth="0"
-				px="3"
-				py="1.5"
-			>
+			<Button type="button" onClick={handleEnterWorld} {...baseButtonStyle}>
 				Enter world
 			</Button>
 		);
@@ -187,9 +153,9 @@ export function CharacterList(props: CharacterListProps) {
 			<Heading as="h1" lineHeight={headingLineHeight}>
 				Your characters
 			</Heading>
-			<Text textStyle="sm" color={mutedTextColor}>
+			<Text textStyle="sm" color="fg.muted">
 				Signed in as{" "}
-				<Text as="span" fontWeight="medium" color={emphasisTextColor}>
+				<Text as="span" fontWeight="medium" color="fg">
 					{email}
 				</Text>
 				.
@@ -201,11 +167,8 @@ export function CharacterList(props: CharacterListProps) {
 				type="button"
 				onClick={handleSignOut}
 				{...baseButtonStyle}
-				borderWidth="1px"
-				borderColor={borderColor}
-				_hover={surfaceHoverStyle}
-				px="3"
-				py="1.5"
+				borderColor="border"
+				_hover={{ bg: "bg.muted" }}
 			>
 				Sign out
 			</Button>

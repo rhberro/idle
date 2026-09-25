@@ -11,12 +11,6 @@ import { CharacterList } from "./characters/character-list";
 import { ChatPanel } from "./chat-panel";
 import { GameCanvas } from "./game-canvas";
 
-const SHELL_BACKGROUND_COLOR = "#171717";
-const SHELL_TEXT_COLOR = "#f5f5f5";
-const MUTED_TEXT_COLOR = "#a3a3a3";
-const ERROR_TEXT_COLOR = "#f87171";
-const CARD_BORDER = "1px solid #262626";
-
 type AuthView =
 	| { kind: "loading" }
 	| { kind: "sign-in" }
@@ -162,7 +156,7 @@ export function App() {
 	let viewContent: React.ReactNode;
 	if (view.kind === "loading") {
 		viewContent = (
-			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+			<Text fontSize="sm" color="fg.muted">
 				Loading…
 			</Text>
 		);
@@ -186,7 +180,7 @@ export function App() {
 		viewContent = <PendingVerification email={view.email} />;
 	} else if (view.kind === "verification-failed") {
 		viewContent = (
-			<Text fontSize="sm" color={ERROR_TEXT_COLOR}>
+			<Text fontSize="sm" color="fg.error">
 				That verification link is invalid or has expired.
 			</Text>
 		);
@@ -230,12 +224,7 @@ export function App() {
 
 	if (view.kind === "in-world") {
 		return (
-			<Box
-				h="100vh"
-				w="100vw"
-				bg={SHELL_BACKGROUND_COLOR}
-				color={SHELL_TEXT_COLOR}
-			>
+			<Box h="100vh" w="100vw" bg="bg" color="fg">
 				{viewContent}
 			</Box>
 		);
@@ -247,10 +236,10 @@ export function App() {
 			w="100vw"
 			align="center"
 			justify="center"
-			bg={SHELL_BACKGROUND_COLOR}
-			color={SHELL_TEXT_COLOR}
+			bg="bg"
+			color="fg"
 		>
-			<Box w="full" maxW="sm" border={CARD_BORDER} borderRadius="4px" p={6}>
+			<Box w="full" maxW="sm" borderWidth="1px" borderColor="border" p={6}>
 				{viewContent}
 			</Box>
 		</Flex>
