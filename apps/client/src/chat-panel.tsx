@@ -20,7 +20,16 @@ import {
 	computeChatCooldownRemainingMs,
 	formatChatMessage,
 } from "./chat-message-utils";
+import { ChatSettingsMenu } from "./chat-settings-menu";
 import { type ChatState, useChatStore } from "./chat-store";
+import {
+	type ChatWindowLayout,
+	clearChatWindowLayout,
+	loadChatWindowLayout,
+	loadShowTimestampsPreference,
+	saveChatWindowLayout,
+	saveShowTimestampsPreference,
+} from "./chat-window-storage";
 import {
 	FLOATING_WINDOW_BACKGROUND_COLOR,
 	FLOATING_WINDOW_BORDER,
@@ -28,6 +37,7 @@ import {
 	FloatingWindow,
 	type FloatingWindowPosition,
 	type FloatingWindowSize,
+	type FloatingWindowStage,
 } from "./floating-window";
 
 type ChatPanelProps = {
@@ -65,25 +75,21 @@ function computeDefaultWindowPosition(): FloatingWindowPosition {
 	return { x: WINDOW_MARGIN, y: Math.max(WINDOW_MARGIN, y) };
 }
 
+function buildDefaultChatWindowLayout(): ChatWindowLayout {
+	return {
+		position: computeDefaultWindowPosition(),
+		size: DEFAULT_WINDOW_SIZE,
+		stage: "default",
+		open: true,
+	};
+}
+
 function selectMessages(state: ChatState): ChatBroadcast[] {
 	return state.messages;
 }
 
 function selectLastSentAt(state: ChatState): number | undefined {
 	return state.lastSentAt;
-}
-
-function renderMessage(message: ChatBroadcast) {
-	const formattedMessage = formatChatMessage(
-		message.characterName,
-		message.text,
-	);
-	const messageKey = `${message.characterId}-${message.sentAt}`;
-	return (
-		<Text key={messageKey} fontSize="sm" color={FLOATING_WINDOW_TEXT_COLOR}>
-			{formattedMessage}
-		</Text>
-	);
 }
 
 function renderChannelTab(channel: ChatChannel) {
@@ -143,12 +149,42 @@ export function ChatPanel(props: ChatPanelProps) {
 		defaultActiveChannelId,
 	);
 
-	const [isWindowOpen, setIsWindowOpen] = useState(true);
-	const [windowPosition, setWindowPosition] = useState<FloatingWindowPosition>(
-		computeDefaultWindowPosition,
+	function loadInitialChatWindowLayout(): ChatWindowLayout {
+		const storedLayout = loadChatWindowLayout(
+			character.id,
+			window.localStorage,
+		);
+		return storedLayout ?? buildDefaultChatWindowLayout();
+	}
+
+	function loadInitialShowTimestamps(): boolean {
+		return loadShowTimestampsPreference(character.id, window.localStorage);
+	}
+
+	const [initialChatWindowLayout] = useState(loadInitialChatWindowLayout);
+
+	const [isWindowOpen, setIsWindowOpen] = useState(
+		initialChatWindowLayout.open,
 	);
-	const [windowSize, setWindowSize] =
-		useState<FloatingWindowSize>(DEFAULT_WINDOW_SIZE);
+	const [windowPosition, setWindowPosition] = useState<FloatingWindowPosition>(
+		initialChatWindowLayout.position,
+	);
+	const [windowSize, setWindowSize] = useState<FloatingWindowSize>(
+		initialChatWindowLayout.size,
+	);
+	const [showTimestamps, setShowTimestamps] = useState(
+		loadInitialShowTimestamps,
+	);
+
+	const chatWindowStageRef = useRef<FloatingWindowStage>(
+		initialChatWindowLayout.stage,
+	);
+	const defaultPositionRef = useRef<FloatingWindowPosition>(
+		initialChatWindowLayout.position,
+	);
+	const defaultSizeRef = useRef<FloatingWindowSize>(
+		initialChatWindowLayout.size,
+	);
 
 	const messages = useChatStore(selectMessages);
 	const lastSentAt = useChatStore(selectLastSentAt);
@@ -254,8 +290,57 @@ export function ChatPanel(props: ChatPanelProps) {
 		setActiveChannelId(details.value);
 	}
 
+	function persistCurrentChatWindowLayout(open: boolean) {
+		const layout: ChatWindowLayout = {
+			position: defaultPositionRef.current,
+			size: defaultSizeRef.current,
+			stage: chatWindowStageRef.current,
+			open,
+		};
+		saveChatWindowLayout(character.id, layout, window.localStorage);
+	}
+
 	function handleWindowOpenChange(open: boolean) {
 		setIsWindowOpen(open);
+		persistCurrentChatWindowLayout(open);
+	}
+
+	function handleWindowPositionChangeEnd(position: FloatingWindowPosition) {
+		defaultPositionRef.current = position;
+		persistCurrentChatWindowLayout(isWindowOpen);
+	}
+
+	function handleWindowSizeChangeEnd(size: FloatingWindowSize) {
+		defaultSizeRef.current = size;
+		persistCurrentChatWindowLayout(isWindowOpen);
+	}
+
+	function handleWindowStageChange(stage: FloatingWindowStage) {
+		chatWindowStageRef.current = stage;
+		persistCurrentChatWindowLayout(isWindowOpen);
+	}
+
+	function handleShowTimestampsChange(nextShowTimestamps: boolean) {
+		setShowTimestamps(nextShowTimestamps);
+		saveShowTimestampsPreference(
+			character.id,
+			nextShowTimestamps,
+			window.localStorage,
+		);
+	}
+
+	// Scoped to position/size/open/stage only, per issue #24's acceptance
+	// criteria — the timestamp preference is a separate setting with its own
+	// storage entry (see chat-window-storage.ts) and is left untouched here.
+	function handleResetToDefault() {
+		const defaultLayout = buildDefaultChatWindowLayout();
+		defaultPositionRef.current = defaultLayout.position;
+		defaultSizeRef.current = defaultLayout.size;
+		chatWindowStageRef.current = defaultLayout.stage;
+		setWindowPosition(defaultLayout.position);
+		setWindowSize(defaultLayout.size);
+		setIsWindowOpen(defaultLayout.open);
+		clearChatWindowLayout(character.id, window.localStorage);
 	}
 
 	function reopenWindow() {
@@ -278,8 +363,31 @@ export function ChatPanel(props: ChatPanelProps) {
 		</IconButton>
 	);
 
+	function renderMessage(message: ChatBroadcast) {
+		const formattedMessage = formatChatMessage(
+			message.characterName,
+			message.text,
+			message.sentAt,
+			showTimestamps,
+		);
+		const messageKey = `${message.characterId}-${message.sentAt}`;
+		return (
+			<Text key={messageKey} fontSize="sm" color={FLOATING_WINDOW_TEXT_COLOR}>
+				{formattedMessage}
+			</Text>
+		);
+	}
+
 	const renderedMessages = messages.map(renderMessage);
 	const renderedChannelTabs = chatChannels.map(renderChannelTab);
+
+	const settingsMenu = (
+		<ChatSettingsMenu
+			showTimestamps={showTimestamps}
+			onShowTimestampsChange={handleShowTimestampsChange}
+			onResetToDefault={handleResetToDefault}
+		/>
+	);
 
 	const sendButton = (
 		<IconButton
@@ -327,10 +435,15 @@ export function ChatPanel(props: ChatPanelProps) {
 				onOpenChange={handleWindowOpenChange}
 				position={windowPosition}
 				onPositionChange={setWindowPosition}
+				onPositionChangeEnd={handleWindowPositionChangeEnd}
 				size={windowSize}
 				onSizeChange={setWindowSize}
+				onSizeChangeEnd={handleWindowSizeChangeEnd}
+				onStageChange={handleWindowStageChange}
+				initialStage={initialChatWindowLayout.stage}
 				minSize={MIN_WINDOW_SIZE}
 				maxSize={MAX_WINDOW_SIZE}
+				titleBarControls={settingsMenu}
 			>
 				<Tabs.Root value={activeChannelId} onValueChange={handleChannelChange}>
 					<Tabs.List

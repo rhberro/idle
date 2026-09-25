@@ -17,11 +17,18 @@ export type FloatingWindowProps = {
 	onOpenChange: (open: boolean) => void;
 	position: FloatingWindowPosition;
 	onPositionChange: (position: FloatingWindowPosition) => void;
+	onPositionChangeEnd?: (position: FloatingWindowPosition) => void;
 	size: FloatingWindowSize;
 	onSizeChange: (size: FloatingWindowSize) => void;
+	onSizeChangeEnd?: (size: FloatingWindowSize) => void;
 	onStageChange?: (stage: FloatingWindowStage) => void;
+	// One-time seed applied imperatively on mount (see StageInitializer below) —
+	// stage has no controlled-prop equivalent in Ark's API, so this cannot be
+	// kept in sync on every render like position/size are.
+	initialStage?: FloatingWindowStage;
 	minSize: FloatingWindowSize;
 	maxSize?: FloatingWindowSize;
+	titleBarControls?: ReactNode;
 	children: ReactNode;
 };
 
@@ -29,8 +36,8 @@ export const FLOATING_WINDOW_BACKGROUND_COLOR = "#171717";
 export const FLOATING_WINDOW_BORDER = "1px solid #262626";
 export const FLOATING_WINDOW_TEXT_COLOR = "#f5f5f5";
 const HEADER_TEXT_COLOR = "#a3a3a3";
-const CONTROL_BUTTON_SIZE = "2xs";
-const CONTROL_BUTTON_VARIANT = "ghost";
+export const FLOATING_WINDOW_CONTROL_BUTTON_SIZE = "2xs";
+export const FLOATING_WINDOW_CONTROL_BUTTON_VARIANT = "ghost";
 
 type IconGlyphProps = {
 	label: string;
@@ -131,6 +138,36 @@ function SizeRestorer(props: SizeRestorerProps) {
 	return undefined;
 }
 
+type StageInitializerProps = {
+	initialStage: FloatingWindowStage;
+};
+
+// Drives the panel into a persisted non-"default" stage exactly once on
+// mount, via Ark's imperative minimize()/maximize() — the only way to seed a
+// stage the panel doesn't accept as a controlled prop (see the comment on
+// FloatingWindowProps["initialStage"]).
+function StageInitializer(props: StageInitializerProps) {
+	const { initialStage } = props;
+	const panel = useFloatingPanelContext();
+	const hasAppliedInitialStageRef = useRef(false);
+
+	function applyInitialStage() {
+		if (hasAppliedInitialStageRef.current) {
+			return;
+		}
+		hasAppliedInitialStageRef.current = true;
+		if (initialStage === "minimized") {
+			panel.minimize();
+		} else if (initialStage === "maximized") {
+			panel.maximize();
+		}
+	}
+
+	useEffect(applyInitialStage, []);
+
+	return undefined;
+}
+
 export function FloatingWindow(props: FloatingWindowProps) {
 	const {
 		title,
@@ -138,11 +175,15 @@ export function FloatingWindow(props: FloatingWindowProps) {
 		onOpenChange,
 		position,
 		onPositionChange,
+		onPositionChangeEnd,
 		size,
 		onSizeChange,
+		onSizeChangeEnd,
 		onStageChange,
+		initialStage,
 		minSize,
 		maxSize,
+		titleBarControls,
 		children,
 	} = props;
 
@@ -164,11 +205,21 @@ export function FloatingWindow(props: FloatingWindowProps) {
 		onPositionChange(details.position);
 	}
 
+	function handlePositionChangeEnd(
+		details: FloatingPanel.PositionChangeDetails,
+	) {
+		onPositionChangeEnd?.(details.position);
+	}
+
 	function handleSizeChange(details: FloatingPanel.SizeChangeDetails) {
 		if (stageRef.current === "default") {
 			fullSizeRef.current = details.size;
 		}
 		onSizeChange(details.size);
+	}
+
+	function handleSizeChangeEnd(details: FloatingPanel.SizeChangeDetails) {
+		onSizeChangeEnd?.(details.size);
 	}
 
 	function handleStageChange(details: FloatingPanel.StageChangeDetails) {
@@ -189,8 +240,8 @@ export function FloatingWindow(props: FloatingWindowProps) {
 		<FloatingPanel.StageTrigger stage="default" asChild>
 			<IconButton
 				aria-label={restoreLabel}
-				size={CONTROL_BUTTON_SIZE}
-				variant={CONTROL_BUTTON_VARIANT}
+				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
+				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
 			>
 				<RestoreIcon />
 			</IconButton>
@@ -199,8 +250,8 @@ export function FloatingWindow(props: FloatingWindowProps) {
 		<FloatingPanel.StageTrigger stage="minimized" asChild>
 			<IconButton
 				aria-label={minimizeLabel}
-				size={CONTROL_BUTTON_SIZE}
-				variant={CONTROL_BUTTON_VARIANT}
+				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
+				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
 			>
 				<MinimizeIcon />
 			</IconButton>
@@ -211,8 +262,8 @@ export function FloatingWindow(props: FloatingWindowProps) {
 		<FloatingPanel.StageTrigger stage="default" asChild>
 			<IconButton
 				aria-label={restoreLabel}
-				size={CONTROL_BUTTON_SIZE}
-				variant={CONTROL_BUTTON_VARIANT}
+				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
+				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
 			>
 				<RestoreIcon />
 			</IconButton>
@@ -221,13 +272,18 @@ export function FloatingWindow(props: FloatingWindowProps) {
 		<FloatingPanel.StageTrigger stage="maximized" asChild>
 			<IconButton
 				aria-label={maximizeLabel}
-				size={CONTROL_BUTTON_SIZE}
-				variant={CONTROL_BUTTON_VARIANT}
+				size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
+				variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
 			>
 				<MaximizeIcon />
 			</IconButton>
 		</FloatingPanel.StageTrigger>
 	);
+
+	const stageInitializer =
+		initialStage === undefined || initialStage === "default" ? undefined : (
+			<StageInitializer initialStage={initialStage} />
+		);
 
 	return (
 		<FloatingPanel.Root
@@ -235,8 +291,10 @@ export function FloatingWindow(props: FloatingWindowProps) {
 			onOpenChange={handleOpenChange}
 			position={position}
 			onPositionChange={handlePositionChange}
+			onPositionChangeEnd={handlePositionChangeEnd}
 			size={size}
 			onSizeChange={handleSizeChange}
+			onSizeChangeEnd={handleSizeChangeEnd}
 			onStageChange={handleStageChange}
 			minSize={minSize}
 			maxSize={maxSize}
@@ -253,6 +311,7 @@ export function FloatingWindow(props: FloatingWindowProps) {
 						overflow="hidden"
 					>
 						<SizeRestorer pendingRestoreSize={pendingRestoreSizeRef} />
+						{stageInitializer}
 						<FloatingPanel.Header
 							borderBottom={FLOATING_WINDOW_BORDER}
 							px={2}
@@ -270,13 +329,14 @@ export function FloatingWindow(props: FloatingWindowProps) {
 								</FloatingPanel.Title>
 							</FloatingPanel.DragTrigger>
 							<FloatingPanel.Control>
+								{titleBarControls}
 								{minimizeControl}
 								{maximizeControl}
 								<FloatingPanel.CloseTrigger asChild>
 									<IconButton
 										aria-label={closeLabel}
-										size={CONTROL_BUTTON_SIZE}
-										variant={CONTROL_BUTTON_VARIANT}
+										size={FLOATING_WINDOW_CONTROL_BUTTON_SIZE}
+										variant={FLOATING_WINDOW_CONTROL_BUTTON_VARIANT}
 									>
 										<CloseIcon />
 									</IconButton>
