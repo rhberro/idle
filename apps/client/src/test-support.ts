@@ -26,6 +26,19 @@ export function createAdminClient() {
 	return createClient(url, secretKey);
 }
 
+export async function fetchSeedWorldId(): Promise<string> {
+	const admin = createAdminClient();
+	const { data, error } = await admin
+		.from("worlds")
+		.select("id")
+		.limit(1)
+		.single();
+	if (error) {
+		throw error;
+	}
+	return data.id;
+}
+
 export function uniqueTestEmail(): string {
 	return `${crypto.randomUUID()}@example.test`;
 }

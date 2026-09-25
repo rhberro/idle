@@ -1,3 +1,4 @@
+import { characterNameSchema } from "@idle/shared";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseClient } from "./supabase-client";
 
@@ -6,6 +7,8 @@ export class InvalidCredentialsError extends Error {}
 export class WeakPasswordError extends Error {}
 export class UnexpectedAuthError extends Error {}
 export class ListCharactersError extends Error {}
+export class InvalidCharacterNameError extends Error {}
+export class CreateCharacterError extends Error {}
 
 export type Account = {
 	id: string;
@@ -148,6 +151,43 @@ export async function listCharacters(): Promise<CharacterSummary[]> {
 		.order("name");
 	if (error) {
 		throw new ListCharactersError(error.message);
+	}
+	return data;
+}
+
+export async function createCharacter(name: string): Promise<CharacterSummary> {
+	const nameParseResult = characterNameSchema.safeParse(name);
+	if (!nameParseResult.success) {
+		throw new InvalidCharacterNameError("Character name is invalid");
+	}
+
+	const supabase = getSupabaseClient();
+	const { data: userData, error: userError } = await supabase.auth.getUser();
+	if (userError || userData.user === null) {
+		throw new CreateCharacterError("Not signed in");
+	}
+
+	const { data: world, error: worldError } = await supabase
+		.from("worlds")
+		.select("id")
+		.limit(1)
+		.single();
+	if (worldError) {
+		throw new CreateCharacterError(worldError.message);
+	}
+
+	const newCharacter = {
+		account_id: userData.user.id,
+		world_id: world.id,
+		name,
+	};
+	const { data, error } = await supabase
+		.from("characters")
+		.insert(newCharacter)
+		.select("id, name")
+		.single();
+	if (error) {
+		throw new CreateCharacterError(error.message);
 	}
 	return data;
 }

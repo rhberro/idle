@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { type CharacterSummary, listCharacters, signOut } from "../auth";
 import { ErrorNotice } from "../auth/error-notice";
+import { CreateCharacterForm } from "./create-character-form";
 
 type CharacterListProps = {
 	email: string;
@@ -46,6 +47,11 @@ export function CharacterList(props: CharacterListProps) {
 
 	function selectCharacter(characterId: string) {
 		setSelectedCharacterId(characterId);
+	}
+
+	function handleCharacterCreated(characterId: string) {
+		loadCharacters();
+		selectCharacter(characterId);
 	}
 
 	function renderCharacterRow(character: CharacterSummary) {
@@ -115,6 +121,7 @@ export function CharacterList(props: CharacterListProps) {
 				<span className="font-medium text-neutral-200">{email}</span>.
 			</p>
 			{listContent}
+			<CreateCharacterForm onCreated={handleCharacterCreated} />
 			<button
 				type="button"
 				onClick={handleSignOut}

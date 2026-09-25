@@ -6,11 +6,15 @@ const pingMessageShape = {
 
 export const pingMessageSchema = z.object(pingMessageShape);
 
-const directions = ["north", "south", "east", "west"] as const;
+export const directions = ["north", "south", "east", "west"] as const;
+
+export const directionSchema = z.enum(directions);
+
+export type Direction = z.infer<typeof directionSchema>;
 
 const playerMoveMessageShape = {
 	type: z.literal("player-move"),
-	direction: z.enum(directions),
+	direction: directionSchema,
 };
 
 export const playerMoveMessageSchema = z.object(playerMoveMessageShape);
