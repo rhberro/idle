@@ -1,6 +1,15 @@
+import { Button, chakra, Field, Input } from "@chakra-ui/react";
 import { useState } from "react";
 import { createCharacter, InvalidCharacterNameError } from "../auth";
 import { ErrorNotice } from "../auth/error-notice";
+import {
+	borderColor,
+	mutedTextColor,
+	primaryButtonBackground,
+	primaryButtonHoverBackground,
+	primaryTextColor,
+	surfaceBackground,
+} from "./colors";
 
 type CreateCharacterFormProps = {
 	onCreated: (characterId: string) => void;
@@ -9,6 +18,10 @@ type CreateCharacterFormProps = {
 const invalidNameMessage =
 	"Names must be 3-20 characters, start with a letter, and use only letters, numbers, and underscores.";
 const unexpectedErrorMessage = "Something went wrong. Please try again.";
+const submittingLabel = "Creating...";
+const idleLabel = "Create character";
+
+const primaryButtonHoverStyle = { bg: primaryButtonHoverBackground };
 
 export function CreateCharacterForm(props: CreateCharacterFormProps) {
 	const { onCreated } = props;
@@ -45,26 +58,56 @@ export function CreateCharacterForm(props: CreateCharacterFormProps) {
 		void submitCreateCharacter();
 	}
 
+	const submitButtonLabel = isSubmitting ? submittingLabel : idleLabel;
+
 	return (
-		<form className="flex flex-col gap-2" onSubmit={handleSubmit}>
-			<label className="text-sm text-neutral-400" htmlFor="new-character-name">
-				New character name
-			</label>
-			<input
-				id="new-character-name"
-				type="text"
-				className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1"
-				value={name}
-				onChange={handleNameChange}
-			/>
+		<chakra.form
+			onSubmit={handleSubmit}
+			display="flex"
+			flexDirection="column"
+			gap="2"
+		>
+			<Field.Root gap="2">
+				<Field.Label
+					htmlFor="new-character-name"
+					textStyle="sm"
+					fontWeight="normal"
+					color={mutedTextColor}
+				>
+					New character name
+				</Field.Label>
+				<Input
+					id="new-character-name"
+					type="text"
+					value={name}
+					onChange={handleNameChange}
+					fontSize="md"
+					color={primaryTextColor}
+					borderColor={borderColor}
+					bg={surfaceBackground}
+					borderRadius="sm"
+					px="2"
+					py="1"
+					h="auto"
+				/>
+			</Field.Root>
 			<ErrorNotice message={errorMessage} />
-			<button
+			<Button
 				type="submit"
 				disabled={isSubmitting}
-				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600 disabled:opacity-50"
+				variant="plain"
+				fontSize="md"
+				color={primaryTextColor}
+				bg={primaryButtonBackground}
+				_hover={primaryButtonHoverStyle}
+				borderWidth="0"
+				borderRadius="sm"
+				px="3"
+				py="1.5"
+				h="auto"
 			>
-				{isSubmitting ? "Creating..." : "Create character"}
-			</button>
-		</form>
+				{submitButtonLabel}
+			</Button>
+		</chakra.form>
 	);
 }
