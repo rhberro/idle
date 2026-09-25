@@ -1,3 +1,2 @@
 [serve.static]
-plugins = ["bun-plugin-tailwind"]
 env = "PUBLIC_*" # only PUBLIC_-prefixed env vars are inlined into the browser bundle
