@@ -46,6 +46,18 @@ export function getOnlineCharacter(
 	return state === undefined ? undefined : toOnlineCharacter(state);
 }
 
+export function sendToOthers(
+	excludeCharacterId: string,
+	message: unknown,
+): void {
+	const payload = JSON.stringify(message);
+	for (const state of onlineCharacters.values()) {
+		if (state.id !== excludeCharacterId) {
+			state.ws.send(payload);
+		}
+	}
+}
+
 export function registerCharacter(
 	ws: ServerWebSocket<ConnectionData>,
 ): ServerWebSocket<ConnectionData> | undefined {

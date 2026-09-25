@@ -9,6 +9,7 @@ import {
 	getOnlineCharacter,
 	type OnlineCharacterState,
 	registerCharacter,
+	sendToOthers,
 	tryMoveCharacter,
 	unregisterCharacter,
 } from "./world-state";
@@ -57,7 +58,7 @@ function handleGameOpen(ws: ServerWebSocket<ConnectionData>) {
 	const character = getOnlineCharacter(characterId);
 	if (character !== undefined) {
 		const joinedMessage = { type: "character-joined" as const, character };
-		ws.publish(WORLD_TOPIC, JSON.stringify(joinedMessage));
+		sendToOthers(characterId, joinedMessage);
 	}
 
 	const logPayload = { characterId };
