@@ -1,10 +1,22 @@
+import {
+	CHAT_MESSAGE_INTERVAL_MS,
+	type ChatBroadcast,
+	parseChatMessage,
+} from "@idle/shared";
 import type { Server, ServerWebSocket } from "bun";
-import { getPort } from "./env";
+import {
+	broadcastToOthers,
+	canSend,
+	recordSend,
+	registerConnection,
+	unregisterConnection,
+} from "./chat-state";
+import { authenticateConnection, type ConnectionData } from "./connection-auth";
+import { getEnv, getPort } from "./env";
 import { logger } from "./logger";
 
-const WORLD_CHAT_TOPIC = "world-chat";
-
 const port = getPort(4003);
+const worldId = getEnv("WORLD_ID");
 
 const healthPayload = { status: "ok", service: "chat" };
 
@@ -13,35 +25,75 @@ function handleHealth() {
 }
 
 const notFoundInit = { status: 404 };
+const unauthorizedInit = { status: 401 };
 const upgradeFailedInit = { status: 500 };
 
-function handleChatFetch(req: Request, server: Server<undefined>) {
+async function handleChatFetch(req: Request, server: Server<ConnectionData>) {
 	const url = new URL(req.url);
 	if (url.pathname !== "/ws") {
 		return new Response("Not Found", notFoundInit);
 	}
-	if (server.upgrade(req)) {
+
+	const connectionData = await authenticateConnection(req, worldId);
+	if (connectionData === undefined) {
+		return new Response("Unauthorized", unauthorizedInit);
+	}
+
+	if (server.upgrade(req, { data: connectionData })) {
 		return;
 	}
 	return new Response("Upgrade failed", upgradeFailedInit);
 }
 
-function handleChatOpen(ws: ServerWebSocket<undefined>) {
-	ws.subscribe(WORLD_CHAT_TOPIC);
-	logger.info("client joined world chat");
+function handleChatOpen(ws: ServerWebSocket<ConnectionData>) {
+	const previousConnection = registerConnection(ws);
+	previousConnection?.close();
+
+	const logPayload = { characterId: ws.data.characterId };
+	logger.info(logPayload, "character joined chat");
+}
+
+function handleGlobalChatMessage(
+	ws: ServerWebSocket<ConnectionData>,
+	text: string,
+) {
+	const { characterId, name } = ws.data;
+	if (!canSend(characterId)) {
+		return;
+	}
+	recordSend(characterId, CHAT_MESSAGE_INTERVAL_MS);
+
+	const broadcastMessage: ChatBroadcast = {
+		channel: "global",
+		characterId,
+		characterName: name,
+		text,
+		sentAt: Date.now(),
+	};
+	broadcastToOthers(characterId, broadcastMessage);
 }
 
 function handleChatMessage(
-	ws: ServerWebSocket<undefined>,
+	ws: ServerWebSocket<ConnectionData>,
 	raw: string | Buffer,
 ) {
-	const logPayload = { raw: raw.toString() };
-	logger.info(logPayload, "chat message received");
-	ws.publish(WORLD_CHAT_TOPIC, raw);
+	try {
+		const message = parseChatMessage(JSON.parse(raw.toString()));
+		if (message.channel === "global") {
+			handleGlobalChatMessage(ws, message.text);
+			return;
+		}
+	} catch (error) {
+		const warnPayload = { error };
+		logger.warn(warnPayload, "invalid chat message");
+	}
 }
 
-function handleChatClose() {
-	logger.info("client left world chat");
+function handleChatClose(ws: ServerWebSocket<ConnectionData>) {
+	unregisterConnection(ws);
+
+	const logPayload = { characterId: ws.data.characterId };
+	logger.info(logPayload, "character left chat");
 }
 
 const routes = {
@@ -62,6 +114,8 @@ const serverOptions = {
 };
 
 const server = Bun.serve(serverOptions);
+
+export { server };
 
 const startupMessage = `chat listening on ${server.url}`;
 logger.info(startupMessage);
