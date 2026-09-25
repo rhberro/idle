@@ -298,3 +298,107 @@ test("a move into the ocean is ignored", async function () {
 
 	result.socket.close();
 });
+
+test("two Characters in the same World see each other join, move, and leave", async function () {
+	const worldId = await fetchSeedWorldId();
+
+	const accountA = await createVerifiedTestAccount();
+	const characterA = await createTestCharacter(
+		accountA.id,
+		worldId,
+		`Watcher_${randomNameSuffix()}`,
+	);
+	const tokenA = await fetchAccessToken(accountA.email);
+
+	const accountB = await createVerifiedTestAccount();
+	const characterB = await createTestCharacter(
+		accountB.id,
+		worldId,
+		`Newcomer_${randomNameSuffix()}`,
+	);
+	const tokenB = await fetchAccessToken(accountB.email);
+
+	const connectionA = await connectGameSocket(
+		buildWsUrl(tokenA, characterA.id),
+	);
+	if (connectionA.outcome !== "open") {
+		throw new Error("expected A's connection to open");
+	}
+	const snapshotForA = await waitForMessage(connectionA.socket);
+	expect(snapshotForA).toEqual({
+		type: "world-snapshot",
+		characters: [
+			{
+				id: characterA.id,
+				name: characterA.name,
+				x: characterA.x,
+				y: characterA.y,
+				direction: characterA.direction,
+			},
+		],
+	});
+
+	const joinedPromise = waitForMessage(connectionA.socket);
+	const connectionB = await connectGameSocket(
+		buildWsUrl(tokenB, characterB.id),
+	);
+	if (connectionB.outcome !== "open") {
+		throw new Error("expected B's connection to open");
+	}
+
+	const snapshotForB = await waitForMessage(connectionB.socket);
+	expect(snapshotForB).toEqual({
+		type: "world-snapshot",
+		characters: [
+			{
+				id: characterA.id,
+				name: characterA.name,
+				x: characterA.x,
+				y: characterA.y,
+				direction: characterA.direction,
+			},
+			{
+				id: characterB.id,
+				name: characterB.name,
+				x: characterB.x,
+				y: characterB.y,
+				direction: characterB.direction,
+			},
+		],
+	});
+
+	const joinedMessage = await joinedPromise;
+	expect(joinedMessage).toEqual({
+		type: "character-joined",
+		character: {
+			id: characterB.id,
+			name: characterB.name,
+			x: characterB.x,
+			y: characterB.y,
+			direction: characterB.direction,
+		},
+	});
+
+	const movedForAPromise = waitForMessage(connectionA.socket);
+	connectionB.socket.send(
+		JSON.stringify({ type: "player-move", direction: "north" }),
+	);
+	const movedForA = await movedForAPromise;
+	expect(movedForA).toEqual({
+		type: "character-moved",
+		characterId: characterB.id,
+		x: characterB.x,
+		y: characterB.y - 1,
+		direction: "north",
+	});
+
+	const leftForAPromise = waitForMessage(connectionA.socket);
+	connectionB.socket.close();
+	const leftForA = await leftForAPromise;
+	expect(leftForA).toEqual({
+		type: "character-left",
+		characterId: characterB.id,
+	});
+
+	connectionA.socket.close();
+});

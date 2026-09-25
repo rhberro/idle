@@ -68,9 +68,33 @@ export const characterMovedMessageSchema = z.object(characterMovedMessageShape);
 
 export type CharacterMovedMessage = z.infer<typeof characterMovedMessageSchema>;
 
+const characterJoinedMessageShape = {
+	type: z.literal("character-joined"),
+	character: onlineCharacterSchema,
+};
+
+export const characterJoinedMessageSchema = z.object(
+	characterJoinedMessageShape,
+);
+
+export type CharacterJoinedMessage = z.infer<
+	typeof characterJoinedMessageSchema
+>;
+
+const characterLeftMessageShape = {
+	type: z.literal("character-left"),
+	characterId: z.string(),
+};
+
+export const characterLeftMessageSchema = z.object(characterLeftMessageShape);
+
+export type CharacterLeftMessage = z.infer<typeof characterLeftMessageSchema>;
+
 const serverMessageSchemas = [
 	worldSnapshotMessageSchema,
 	characterMovedMessageSchema,
+	characterJoinedMessageSchema,
+	characterLeftMessageSchema,
 ] as const;
 
 export const serverMessageSchema = z.discriminatedUnion(

@@ -11,6 +11,8 @@ export type GameState = {
 	onlineCharacters: OnlineCharacter[];
 	setOnlineCharacters: (onlineCharacters: OnlineCharacter[]) => void;
 	applyCharacterMoved: (update: CharacterMovedMessage) => void;
+	addOnlineCharacter: (character: OnlineCharacter) => void;
+	removeOnlineCharacter: (characterId: string) => void;
 };
 
 const createGameStore: StateCreator<GameState> = function createGameStore(set) {
@@ -42,6 +44,30 @@ const createGameStore: StateCreator<GameState> = function createGameStore(set) {
 			function nextState(state: GameState): Partial<GameState> {
 				return {
 					onlineCharacters: state.onlineCharacters.map(applyUpdateToCharacter),
+				};
+			}
+			set(nextState);
+		},
+		addOnlineCharacter(character) {
+			function isDifferentCharacter(existing: OnlineCharacter): boolean {
+				return existing.id !== character.id;
+			}
+			function nextState(state: GameState): Partial<GameState> {
+				const withoutExisting =
+					state.onlineCharacters.filter(isDifferentCharacter);
+				return {
+					onlineCharacters: [...withoutExisting, character],
+				};
+			}
+			set(nextState);
+		},
+		removeOnlineCharacter(characterId) {
+			function isDifferentCharacter(existing: OnlineCharacter): boolean {
+				return existing.id !== characterId;
+			}
+			function nextState(state: GameState): Partial<GameState> {
+				return {
+					onlineCharacters: state.onlineCharacters.filter(isDifferentCharacter),
 				};
 			}
 			set(nextState);

@@ -5,6 +5,7 @@ import { getEnv, getPort } from "./env";
 import { logger } from "./logger";
 import {
 	buildWorldSnapshot,
+	getOnlineCharacter,
 	registerCharacter,
 	tryMoveCharacter,
 	unregisterCharacter,
@@ -51,6 +52,12 @@ function handleGameOpen(ws: ServerWebSocket<ConnectionData>) {
 	ws.subscribe(WORLD_TOPIC);
 	ws.send(JSON.stringify(buildWorldSnapshot()));
 
+	const character = getOnlineCharacter(characterId);
+	if (character !== undefined) {
+		const joinedMessage = { type: "character-joined" as const, character };
+		ws.publish(WORLD_TOPIC, JSON.stringify(joinedMessage));
+	}
+
 	const logPayload = { characterId };
 	logger.info(logPayload, "character connected");
 }
@@ -92,8 +99,14 @@ function handleGameMessage(
 }
 
 function handleGameClose(ws: ServerWebSocket<ConnectionData>) {
-	unregisterCharacter(ws);
-	const logPayload = { characterId: ws.data.characterId };
+	const { characterId } = ws.data;
+	const wasOnline = unregisterCharacter(ws);
+	if (wasOnline) {
+		const leftMessage = { type: "character-left" as const, characterId };
+		server.publish(WORLD_TOPIC, JSON.stringify(leftMessage));
+	}
+
+	const logPayload = { characterId };
 	logger.info(logPayload, "character disconnected");
 }
 

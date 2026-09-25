@@ -39,6 +39,13 @@ export function buildWorldSnapshot(): WorldSnapshotMessage {
 	return { type: "world-snapshot", characters };
 }
 
+export function getOnlineCharacter(
+	characterId: string,
+): OnlineCharacter | undefined {
+	const state = onlineCharacters.get(characterId);
+	return state === undefined ? undefined : toOnlineCharacter(state);
+}
+
 export function registerCharacter(
 	ws: ServerWebSocket<ConnectionData>,
 ): ServerWebSocket<ConnectionData> | undefined {
@@ -56,12 +63,16 @@ export function registerCharacter(
 	return existing?.ws;
 }
 
-export function unregisterCharacter(ws: ServerWebSocket<ConnectionData>): void {
+export function unregisterCharacter(
+	ws: ServerWebSocket<ConnectionData>,
+): boolean {
 	const { characterId } = ws.data;
 	const current = onlineCharacters.get(characterId);
-	if (current !== undefined && current.ws === ws) {
-		onlineCharacters.delete(characterId);
+	if (current === undefined || current.ws !== ws) {
+		return false;
 	}
+	onlineCharacters.delete(characterId);
+	return true;
 }
 
 export function tryMoveCharacter(
