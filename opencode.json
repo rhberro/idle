@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["docs/architecture.md", "docs/code-style.md"],
+  "mcp": {
+    "chakra-ui": {
+      "type": "local",
+      "command": ["npx", "-y", "@chakra-ui/react-mcp"]
+    },
+    "next-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "next-devtools-mcp@latest"]
+    },
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref=tepkzdgaecpqnlsdkkti&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
+    }
+  }
+}
