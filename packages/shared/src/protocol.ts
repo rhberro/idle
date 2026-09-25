@@ -35,6 +35,40 @@ export function parseClientMessage(raw: unknown): ClientMessage {
 	return clientMessageSchema.parse(raw);
 }
 
+const onlineCharacterShape = {
+	id: z.string(),
+	name: z.string(),
+	x: z.number().int(),
+	y: z.number().int(),
+	direction: directionSchema,
+};
+
+export const onlineCharacterSchema = z.object(onlineCharacterShape);
+
+export type OnlineCharacter = z.infer<typeof onlineCharacterSchema>;
+
+const worldSnapshotMessageShape = {
+	type: z.literal("world-snapshot"),
+	characters: z.array(onlineCharacterSchema),
+};
+
+export const worldSnapshotMessageSchema = z.object(worldSnapshotMessageShape);
+
+export type WorldSnapshotMessage = z.infer<typeof worldSnapshotMessageSchema>;
+
+const serverMessageSchemas = [worldSnapshotMessageSchema] as const;
+
+export const serverMessageSchema = z.discriminatedUnion(
+	"type",
+	serverMessageSchemas,
+);
+
+export type ServerMessage = z.infer<typeof serverMessageSchema>;
+
+export function parseServerMessage(raw: unknown): ServerMessage {
+	return serverMessageSchema.parse(raw);
+}
+
 const characterNameMinLength = 3;
 const characterNameMaxLength = 20;
 const characterNamePattern = /^[A-Za-z][A-Za-z0-9_]*$/;

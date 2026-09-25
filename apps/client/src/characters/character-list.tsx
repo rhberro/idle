@@ -6,6 +6,7 @@ import { CreateCharacterForm } from "./create-character-form";
 type CharacterListProps = {
 	email: string;
 	onSignedOut: () => void;
+	onEnterWorld: (characterId: string) => void;
 };
 
 type LoadState =
@@ -22,7 +23,7 @@ const unselectedRowClassName =
 	"rounded border border-neutral-700 px-3 py-2 text-left hover:bg-neutral-800";
 
 export function CharacterList(props: CharacterListProps) {
-	const { email, onSignedOut } = props;
+	const { email, onSignedOut, onEnterWorld } = props;
 	const [loadState, setLoadState] = useState<LoadState>(loadingState);
 	const [selectedCharacterId, setSelectedCharacterId] = useState<
 		string | undefined
@@ -89,6 +90,12 @@ export function CharacterList(props: CharacterListProps) {
 		void performSignOut();
 	}
 
+	function handleEnterWorld() {
+		if (selectedCharacterId !== undefined) {
+			onEnterWorld(selectedCharacterId);
+		}
+	}
+
 	let listContent: React.ReactNode;
 	if (loadState.kind === "loading") {
 		listContent = (
@@ -113,6 +120,17 @@ export function CharacterList(props: CharacterListProps) {
 		);
 	}
 
+	const enterWorldButton =
+		selectedCharacterId === undefined ? undefined : (
+			<button
+				type="button"
+				onClick={handleEnterWorld}
+				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600"
+			>
+				Enter world
+			</button>
+		);
+
 	return (
 		<div className="flex flex-col gap-3">
 			<h1 className="text-xl font-semibold">Your characters</h1>
@@ -121,6 +139,7 @@ export function CharacterList(props: CharacterListProps) {
 				<span className="font-medium text-neutral-200">{email}</span>.
 			</p>
 			{listContent}
+			{enterWorldButton}
 			<CreateCharacterForm onCreated={handleCharacterCreated} />
 			<button
 				type="button"

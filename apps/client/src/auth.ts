@@ -143,6 +143,12 @@ export async function getSession(): Promise<Account | undefined> {
 	return toAccount(data.session?.user);
 }
 
+export async function getAccessToken(): Promise<string | undefined> {
+	const supabase = getSupabaseClient();
+	const { data } = await supabase.auth.getSession();
+	return data.session?.access_token;
+}
+
 export async function listCharacters(): Promise<CharacterSummary[]> {
 	const supabase = getSupabaseClient();
 	const { data, error } = await supabase

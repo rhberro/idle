@@ -7,6 +7,7 @@ import { SetNewPasswordForm } from "./auth/set-new-password-form";
 import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
 import { CharacterList } from "./characters/character-list";
+import { GameCanvas } from "./game-canvas";
 
 type AuthView =
 	| { kind: "loading" }
@@ -17,7 +18,8 @@ type AuthView =
 	| { kind: "request-password-reset" }
 	| { kind: "password-reset-requested"; email: string }
 	| { kind: "reset-password"; tokenHash: string }
-	| { kind: "signed-in"; email: string };
+	| { kind: "signed-in"; email: string }
+	| { kind: "in-world"; email: string; characterId: string };
 
 const loadingView: AuthView = { kind: "loading" };
 const signInView: AuthView = { kind: "sign-in" };
@@ -138,6 +140,17 @@ export function App() {
 		setView(signInView);
 	}
 
+	function handleEnterWorld(characterId: string) {
+		if (view.kind === "signed-in") {
+			const nextView: AuthView = {
+				kind: "in-world",
+				email: view.email,
+				characterId,
+			};
+			setView(nextView);
+		}
+	}
+
 	let viewContent: React.ReactNode;
 	if (view.kind === "loading") {
 		viewContent = <p className="text-sm text-neutral-400">Loading…</p>;
@@ -186,9 +199,23 @@ export function App() {
 				onPasswordReset={handlePasswordReset}
 			/>
 		);
-	} else {
+	} else if (view.kind === "signed-in") {
 		viewContent = (
-			<CharacterList email={view.email} onSignedOut={handleSignedOut} />
+			<CharacterList
+				email={view.email}
+				onSignedOut={handleSignedOut}
+				onEnterWorld={handleEnterWorld}
+			/>
+		);
+	} else {
+		viewContent = <GameCanvas characterId={view.characterId} />;
+	}
+
+	if (view.kind === "in-world") {
+		return (
+			<div className="h-screen w-screen bg-neutral-900 text-neutral-100">
+				{viewContent}
+			</div>
 		);
 	}
 
