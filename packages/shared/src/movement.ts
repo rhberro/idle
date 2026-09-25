@@ -1,12 +1,8 @@
 import { ISLAND_MAX_TILE, ISLAND_MIN_TILE } from "./constants";
 import type { Direction } from "./protocol";
+import type { Position } from "./types";
 
-export type TilePosition = {
-	x: number;
-	y: number;
-};
-
-const directionOffsets: Record<Direction, TilePosition> = {
+const directionOffsets: Record<Direction, Position> = {
 	north: { x: 0, y: -1 },
 	south: { x: 0, y: 1 },
 	east: { x: 1, y: 0 },
@@ -14,14 +10,14 @@ const directionOffsets: Record<Direction, TilePosition> = {
 };
 
 export function applyDirection(
-	position: TilePosition,
+	position: Position,
 	direction: Direction,
-): TilePosition {
+): Position {
 	const offset = directionOffsets[direction];
 	return { x: position.x + offset.x, y: position.y + offset.y };
 }
 
-export function isWithinIsland(position: TilePosition): boolean {
+export function isWithinIsland(position: Position): boolean {
 	return (
 		position.x >= ISLAND_MIN_TILE &&
 		position.x <= ISLAND_MAX_TILE &&

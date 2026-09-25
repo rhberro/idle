@@ -1,10 +1,5 @@
-import type { Direction } from "@idle/shared";
+import type { Direction, Position } from "@idle/shared";
 import { GRID_TILE_SIZE } from "@idle/shared";
-
-export type TilePosition = {
-	x: number;
-	y: number;
-};
 
 export type PixelOffset = {
 	x: number;
@@ -31,7 +26,7 @@ export function keyToDirection(key: string): Direction | undefined {
 }
 
 export function computeCameraOffset(
-	characterTile: TilePosition,
+	characterTile: Position,
 	viewportWidth: number,
 	viewportHeight: number,
 ): PixelOffset {

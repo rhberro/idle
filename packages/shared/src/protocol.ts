@@ -90,11 +90,18 @@ export const characterLeftMessageSchema = z.object(characterLeftMessageShape);
 
 export type CharacterLeftMessage = z.infer<typeof characterLeftMessageSchema>;
 
+const pongMessageShape = {
+	type: z.literal("pong"),
+};
+
+export const pongMessageSchema = z.object(pongMessageShape);
+
 const serverMessageSchemas = [
 	worldSnapshotMessageSchema,
 	characterMovedMessageSchema,
 	characterJoinedMessageSchema,
 	characterLeftMessageSchema,
+	pongMessageSchema,
 ] as const;
 
 export const serverMessageSchema = z.discriminatedUnion(
