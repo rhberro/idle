@@ -1,6 +1,19 @@
+import { Button, Heading, Stack, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { type CharacterSummary, listCharacters, signOut } from "../auth";
 import { ErrorNotice } from "../auth/error-notice";
+import {
+	borderColor,
+	emphasisTextColor,
+	errorTextColor,
+	mutedTextColor,
+	primaryButtonBackground,
+	primaryButtonHoverBackground,
+	primaryTextColor,
+	selectedBackground,
+	selectedBorderColor,
+	surfaceBackground,
+} from "./colors";
 import { CreateCharacterForm } from "./create-character-form";
 
 type CharacterListProps = {
@@ -17,10 +30,28 @@ type LoadState =
 const loadingState: LoadState = { kind: "loading" };
 const errorState: LoadState = { kind: "error" };
 
-const selectedRowClassName =
-	"rounded border border-emerald-600 bg-emerald-900/40 px-3 py-2 text-left";
-const unselectedRowClassName =
-	"rounded border border-neutral-700 px-3 py-2 text-left hover:bg-neutral-800";
+const headingLineHeight = "1.75rem";
+
+const baseButtonStyle = {
+	variant: "plain",
+	fontSize: "md",
+	color: primaryTextColor,
+	borderRadius: "sm",
+	h: "auto",
+} as const;
+
+const primaryButtonHoverStyle = { bg: primaryButtonHoverBackground };
+const surfaceHoverStyle = { bg: surfaceBackground };
+
+const selectedRowStyle = {
+	borderColor: selectedBorderColor,
+	bg: selectedBackground,
+} as const;
+
+const unselectedRowStyle = {
+	borderColor: borderColor,
+	_hover: surfaceHoverStyle,
+} as const;
 
 export function CharacterList(props: CharacterListProps) {
 	const { email, onSignedOut, onEnterWorld } = props;
@@ -57,23 +88,28 @@ export function CharacterList(props: CharacterListProps) {
 
 	function renderCharacterRow(character: CharacterSummary) {
 		const isSelected = character.id === selectedCharacterId;
-		const rowClassName = isSelected
-			? selectedRowClassName
-			: unselectedRowClassName;
+		const rowStyle = isSelected ? selectedRowStyle : unselectedRowStyle;
 
 		function handleClick() {
 			selectCharacter(character.id);
 		}
 
 		return (
-			<button
+			<Button
 				key={character.id}
 				type="button"
 				onClick={handleClick}
-				className={rowClassName}
+				{...baseButtonStyle}
+				w="full"
+				justifyContent="flex-start"
+				fontWeight="normal"
+				borderWidth="1px"
+				px="3"
+				py="2"
+				{...rowStyle}
 			>
 				{character.name}
-			</button>
+			</Button>
 		);
 	}
 
@@ -99,56 +135,71 @@ export function CharacterList(props: CharacterListProps) {
 	let listContent: React.ReactNode;
 	if (loadState.kind === "loading") {
 		listContent = (
-			<p className="text-sm text-neutral-400">Loading characters…</p>
+			<Text textStyle="sm" color={mutedTextColor}>
+				Loading characters…
+			</Text>
 		);
 	} else if (loadState.kind === "error") {
 		listContent = (
-			<p className="text-sm text-red-400">
+			<Text textStyle="sm" color={errorTextColor}>
 				Could not load your characters. Please try again later.
-			</p>
+			</Text>
 		);
 	} else if (loadState.characters.length === 0) {
 		listContent = (
-			<p className="text-sm text-neutral-400">
+			<Text textStyle="sm" color={mutedTextColor}>
 				You don't have any characters yet.
-			</p>
+			</Text>
 		);
 	} else {
 		const renderedCharacters = loadState.characters.map(renderCharacterRow);
-		listContent = (
-			<div className="flex flex-col gap-2">{renderedCharacters}</div>
-		);
+		listContent = <Stack gap="2">{renderedCharacters}</Stack>;
 	}
 
 	const enterWorldButton =
 		selectedCharacterId === undefined ? undefined : (
-			<button
+			<Button
 				type="button"
 				onClick={handleEnterWorld}
-				className="rounded bg-emerald-700 px-3 py-1.5 font-medium hover:bg-emerald-600"
+				{...baseButtonStyle}
+				bg={primaryButtonBackground}
+				_hover={primaryButtonHoverStyle}
+				borderWidth="0"
+				px="3"
+				py="1.5"
 			>
 				Enter world
-			</button>
+			</Button>
 		);
 
 	return (
-		<div className="flex flex-col gap-3">
-			<h1 className="text-xl font-semibold">Your characters</h1>
-			<p className="text-sm text-neutral-400">
+		<Stack gap="3">
+			<Heading as="h1" lineHeight={headingLineHeight}>
+				Your characters
+			</Heading>
+			<Text textStyle="sm" color={mutedTextColor}>
 				Signed in as{" "}
-				<span className="font-medium text-neutral-200">{email}</span>.
-			</p>
+				<Text as="span" fontWeight="medium" color={emphasisTextColor}>
+					{email}
+				</Text>
+				.
+			</Text>
 			{listContent}
 			{enterWorldButton}
 			<CreateCharacterForm onCreated={handleCharacterCreated} />
-			<button
+			<Button
 				type="button"
 				onClick={handleSignOut}
-				className="rounded border border-neutral-700 px-3 py-1.5 font-medium hover:bg-neutral-800"
+				{...baseButtonStyle}
+				borderWidth="1px"
+				borderColor={borderColor}
+				_hover={surfaceHoverStyle}
+				px="3"
+				py="1.5"
 			>
 				Sign out
-			</button>
+			</Button>
 			<ErrorNotice message={signOutErrorMessage} />
-		</div>
+		</Stack>
 	);
 }
