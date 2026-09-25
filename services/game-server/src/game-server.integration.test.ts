@@ -72,7 +72,14 @@ function waitForClose(socket: WebSocket): Promise<void> {
 	return withTimeout(closed, "Timed out waiting for the socket to close");
 }
 
+function sleep(ms: number): Promise<void> {
+	return new Promise(function wait(resolve) {
+		setTimeout(resolve, ms);
+	});
+}
+
 const NO_MESSAGE_WAIT_MS = 300;
+const PERSIST_WAIT_MS = 300;
 
 function waitForMessageOrTimeout(
 	socket: WebSocket,
@@ -297,4 +304,124 @@ test("a move into the ocean is ignored", async function () {
 	expect(attempt).toBe("timeout");
 
 	result.socket.close();
+});
+
+test("position persists on disconnect and is reflected on reconnect", async function () {
+	const admin = createAdminClient();
+	const account = await createVerifiedTestAccount();
+	const worldId = await fetchSeedWorldId();
+	const character = await createTestCharacter(
+		account.id,
+		worldId,
+		`Persist_${randomNameSuffix()}`,
+	);
+	const token = await fetchAccessToken(account.email);
+
+	const first = await connectGameSocket(buildWsUrl(token, character.id));
+	if (first.outcome !== "open") {
+		throw new Error("expected connection to open");
+	}
+	await waitForMessage(first.socket);
+
+	first.socket.send(
+		JSON.stringify({ type: "player-move", direction: "north" }),
+	);
+	const moveMessage = (await waitForMessage(first.socket)) as {
+		x: number;
+		y: number;
+		direction: string;
+	};
+
+	const firstClosed = waitForClose(first.socket);
+	first.socket.close();
+	await firstClosed;
+	await sleep(PERSIST_WAIT_MS);
+
+	const { data: row, error } = await admin
+		.from("characters")
+		.select("x, y, direction")
+		.eq("id", character.id)
+		.single();
+	if (error) {
+		throw error;
+	}
+	expect(row).toEqual({
+		x: moveMessage.x,
+		y: moveMessage.y,
+		direction: moveMessage.direction,
+	});
+
+	const second = await connectGameSocket(buildWsUrl(token, character.id));
+	if (second.outcome !== "open") {
+		throw new Error("expected reconnection to open");
+	}
+	const snapshot = await waitForMessage(second.socket);
+	expect(snapshot).toEqual({
+		type: "world-snapshot",
+		characters: [
+			{
+				id: character.id,
+				name: character.name,
+				x: moveMessage.x,
+				y: moveMessage.y,
+				direction: moveMessage.direction,
+			},
+		],
+	});
+
+	second.socket.close();
+});
+
+test("a stale kicked-out connection does not overwrite the newer connection's position on its delayed close", async function () {
+	const admin = createAdminClient();
+	const account = await createVerifiedTestAccount();
+	const worldId = await fetchSeedWorldId();
+	const character = await createTestCharacter(
+		account.id,
+		worldId,
+		`Kicked_${randomNameSuffix()}`,
+	);
+	const token = await fetchAccessToken(account.email);
+
+	const first = await connectGameSocket(buildWsUrl(token, character.id));
+	if (first.outcome !== "open") {
+		throw new Error("expected first connection to open");
+	}
+	await waitForMessage(first.socket);
+
+	const firstClosed = waitForClose(first.socket);
+	const second = await connectGameSocket(buildWsUrl(token, character.id));
+	if (second.outcome !== "open") {
+		throw new Error("expected second connection to open");
+	}
+	await waitForMessage(second.socket);
+	await firstClosed;
+
+	second.socket.send(
+		JSON.stringify({ type: "player-move", direction: "south" }),
+	);
+	const moveMessage = (await waitForMessage(second.socket)) as {
+		x: number;
+		y: number;
+		direction: string;
+	};
+
+	const secondClosed = waitForClose(second.socket);
+	second.socket.close();
+	await secondClosed;
+	await sleep(PERSIST_WAIT_MS);
+
+	const { data: row, error } = await admin
+		.from("characters")
+		.select("x, y, direction")
+		.eq("id", character.id)
+		.single();
+	if (error) {
+		throw error;
+	}
+	expect(row).toEqual({
+		x: moveMessage.x,
+		y: moveMessage.y,
+		direction: moveMessage.direction,
+	});
 });
