@@ -1,5 +1,7 @@
+import { ChakraProvider } from "@chakra-ui/react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app";
+import { system } from "./chakra-system";
 
 class MissingRootElementError extends Error {}
 
@@ -9,4 +11,8 @@ if (container === null) {
 }
 
 const root = createRoot(container);
-root.render(<App />);
+root.render(
+	<ChakraProvider value={system}>
+		<App />
+	</ChakraProvider>,
+);

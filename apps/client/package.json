@@ -9,6 +9,8 @@
 		"test": "bun test"
 	},
 	"dependencies": {
+		"@chakra-ui/react": "latest",
+		"@emotion/react": "latest",
 		"@idle/shared": "workspace:*",
 		"@supabase/supabase-js": "latest",
 		"pino": "latest",
