@@ -19,7 +19,7 @@ import { CreateCharacterForm } from "./create-character-form";
 type CharacterListProps = {
 	email: string;
 	onSignedOut: () => void;
-	onEnterWorld: (characterId: string) => void;
+	onEnterWorld: (character: CharacterSummary) => void;
 };
 
 type LoadState =
@@ -127,9 +127,19 @@ export function CharacterList(props: CharacterListProps) {
 	}
 
 	function handleEnterWorld() {
-		if (selectedCharacterId !== undefined) {
-			onEnterWorld(selectedCharacterId);
+		if (selectedCharacterId === undefined || loadState.kind !== "loaded") {
+			return;
 		}
+
+		function isSelectedCharacter(character: CharacterSummary): boolean {
+			return character.id === selectedCharacterId;
+		}
+
+		const selectedCharacter = loadState.characters.find(isSelectedCharacter);
+		if (selectedCharacter === undefined) {
+			return;
+		}
+		onEnterWorld(selectedCharacter);
 	}
 
 	let listContent: React.ReactNode;

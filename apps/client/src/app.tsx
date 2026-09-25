@@ -1,6 +1,6 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { confirmEmail, getSession } from "./auth";
+import { type CharacterSummary, confirmEmail, getSession } from "./auth";
 import { PasswordResetRequested } from "./auth/password-reset-requested";
 import { PendingVerification } from "./auth/pending-verification";
 import { RequestPasswordResetForm } from "./auth/request-password-reset-form";
@@ -8,6 +8,7 @@ import { SetNewPasswordForm } from "./auth/set-new-password-form";
 import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
 import { CharacterList } from "./characters/character-list";
+import { ChatPanel } from "./chat-panel";
 import { GameCanvas } from "./game-canvas";
 
 const SHELL_BACKGROUND_COLOR = "#171717";
@@ -26,7 +27,7 @@ type AuthView =
 	| { kind: "password-reset-requested"; email: string }
 	| { kind: "reset-password"; tokenHash: string }
 	| { kind: "signed-in"; email: string }
-	| { kind: "in-world"; email: string; characterId: string };
+	| { kind: "in-world"; email: string; character: CharacterSummary };
 
 const loadingView: AuthView = { kind: "loading" };
 const signInView: AuthView = { kind: "sign-in" };
@@ -147,12 +148,12 @@ export function App() {
 		setView(signInView);
 	}
 
-	function handleEnterWorld(characterId: string) {
+	function handleEnterWorld(character: CharacterSummary) {
 		if (view.kind === "signed-in") {
 			const nextView: AuthView = {
 				kind: "in-world",
 				email: view.email,
-				characterId,
+				character,
 			};
 			setView(nextView);
 		}
@@ -219,7 +220,12 @@ export function App() {
 			/>
 		);
 	} else {
-		viewContent = <GameCanvas characterId={view.characterId} />;
+		viewContent = (
+			<>
+				<GameCanvas characterId={view.character.id} />
+				<ChatPanel character={view.character} />
+			</>
+		);
 	}
 
 	if (view.kind === "in-world") {
