@@ -5,6 +5,7 @@ import {
 	Input,
 	Portal,
 	Stack,
+	Tabs,
 	Text,
 	TooltipContent,
 	TooltipPositioner,
@@ -20,26 +21,49 @@ import {
 	formatChatMessage,
 } from "./chat-message-utils";
 import { type ChatState, useChatStore } from "./chat-store";
+import {
+	FLOATING_WINDOW_BACKGROUND_COLOR,
+	FLOATING_WINDOW_BORDER,
+	FLOATING_WINDOW_TEXT_COLOR,
+	FloatingWindow,
+	type FloatingWindowPosition,
+	type FloatingWindowSize,
+} from "./floating-window";
 
 type ChatPanelProps = {
 	character: CharacterSummary;
 };
 
-const PANEL_BACKGROUND_COLOR = "#171717";
+type ChatChannel = {
+	id: string;
+	label: string;
+};
+
+const globalChannel: ChatChannel = { id: "global", label: "Global" };
+const chatChannels: ChatChannel[] = [globalChannel];
+const defaultActiveChannelId = globalChannel.id;
+
 const PANEL_BORDER = "1px solid #262626";
 const FIELD_BACKGROUND_COLOR = "#262626";
 const FIELD_BORDER_COLOR = "#404040";
-const PRIMARY_TEXT_COLOR = "#f5f5f5";
 const MUTED_TEXT_COLOR = "#a3a3a3";
 const SEND_BUTTON_BACKGROUND_COLOR = "#047857";
 const SEND_BUTTON_HOVER_BACKGROUND_COLOR = "#059669";
 const SEND_BUTTON_HOVER_STYLE = { bg: SEND_BUTTON_HOVER_BACKGROUND_COLOR };
 const DISABLED_BUTTON_STYLE = { opacity: 0.5 };
 
-const PANEL_WIDTH = "320px";
-const PANEL_HEIGHT = "360px";
+const DEFAULT_WINDOW_SIZE: FloatingWindowSize = { width: 320, height: 360 };
+const MIN_WINDOW_SIZE: FloatingWindowSize = { width: 260, height: 220 };
+const MAX_WINDOW_SIZE: FloatingWindowSize = { width: 640, height: 720 };
+const WINDOW_MARGIN = 16;
+
 const COOLDOWN_TICK_INTERVAL_MS = 250;
 const MILLISECONDS_PER_SECOND = 1000;
+
+function computeDefaultWindowPosition(): FloatingWindowPosition {
+	const y = window.innerHeight - DEFAULT_WINDOW_SIZE.height - WINDOW_MARGIN;
+	return { x: WINDOW_MARGIN, y: Math.max(WINDOW_MARGIN, y) };
+}
 
 function selectMessages(state: ChatState): ChatBroadcast[] {
 	return state.messages;
@@ -56,9 +80,17 @@ function renderMessage(message: ChatBroadcast) {
 	);
 	const messageKey = `${message.characterId}-${message.sentAt}`;
 	return (
-		<Text key={messageKey} fontSize="sm" color={PRIMARY_TEXT_COLOR}>
+		<Text key={messageKey} fontSize="sm" color={FLOATING_WINDOW_TEXT_COLOR}>
 			{formattedMessage}
 		</Text>
+	);
+}
+
+function renderChannelTab(channel: ChatChannel) {
+	return (
+		<Tabs.Trigger key={channel.id} value={channel.id} fontSize="sm">
+			{channel.label}
+		</Tabs.Trigger>
 	);
 }
 
@@ -82,12 +114,41 @@ function SendIcon() {
 	);
 }
 
+function ChatBubbleIcon() {
+	return (
+		<svg
+			width="18"
+			height="18"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden="true"
+		>
+			<title>Open chat</title>
+			<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+		</svg>
+	);
+}
+
 export function ChatPanel(props: ChatPanelProps) {
 	const { character } = props;
 	const socketRef = useRef<WebSocket | undefined>(undefined);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [messageDraft, setMessageDraft] = useState("");
 	const [now, setNow] = useState(Date.now);
+	const [activeChannelId, setActiveChannelId] = useState(
+		defaultActiveChannelId,
+	);
+
+	const [isWindowOpen, setIsWindowOpen] = useState(true);
+	const [windowPosition, setWindowPosition] = useState<FloatingWindowPosition>(
+		computeDefaultWindowPosition,
+	);
+	const [windowSize, setWindowSize] =
+		useState<FloatingWindowSize>(DEFAULT_WINDOW_SIZE);
 
 	const messages = useChatStore(selectMessages);
 	const lastSentAt = useChatStore(selectLastSentAt);
@@ -189,7 +250,36 @@ export function ChatPanel(props: ChatPanelProps) {
 		setMessageDraft(event.target.value);
 	}
 
+	function handleChannelChange(details: Tabs.TabsValueChangeDetails) {
+		setActiveChannelId(details.value);
+	}
+
+	function handleWindowOpenChange(open: boolean) {
+		setIsWindowOpen(open);
+	}
+
+	function reopenWindow() {
+		setIsWindowOpen(true);
+	}
+
+	const reopenAffordance = isWindowOpen ? undefined : (
+		<IconButton
+			aria-label="Open Global chat"
+			position="fixed"
+			left={4}
+			bottom={4}
+			rounded="full"
+			bg={FLOATING_WINDOW_BACKGROUND_COLOR}
+			border={FLOATING_WINDOW_BORDER}
+			color={FLOATING_WINDOW_TEXT_COLOR}
+			onClick={reopenWindow}
+		>
+			<ChatBubbleIcon />
+		</IconButton>
+	);
+
 	const renderedMessages = messages.map(renderMessage);
+	const renderedChannelTabs = chatChannels.map(renderChannelTab);
 
 	const sendButton = (
 		<IconButton
@@ -217,7 +307,7 @@ export function ChatPanel(props: ChatPanelProps) {
 				<TooltipPositioner>
 					<TooltipContent
 						bg={FIELD_BACKGROUND_COLOR}
-						color={PRIMARY_TEXT_COLOR}
+						color={FLOATING_WINDOW_TEXT_COLOR}
 					>
 						{cooldownTooltipMessage}
 					</TooltipContent>
@@ -229,48 +319,47 @@ export function ChatPanel(props: ChatPanelProps) {
 	);
 
 	return (
-		<Box
-			position="fixed"
-			left={4}
-			bottom={4}
-			w={PANEL_WIDTH}
-			h={PANEL_HEIGHT}
-			bg={PANEL_BACKGROUND_COLOR}
-			border={PANEL_BORDER}
-			borderRadius="4px"
-			color={PRIMARY_TEXT_COLOR}
-			display="flex"
-			flexDirection="column"
-			overflow="hidden"
-		>
-			<Flex
-				borderBottom={PANEL_BORDER}
-				px={3}
-				py={2}
-				fontSize="sm"
-				fontWeight="medium"
-				color={MUTED_TEXT_COLOR}
+		<>
+			{reopenAffordance}
+			<FloatingWindow
+				title="Chat"
+				open={isWindowOpen}
+				onOpenChange={handleWindowOpenChange}
+				position={windowPosition}
+				onPositionChange={setWindowPosition}
+				size={windowSize}
+				onSizeChange={setWindowSize}
+				minSize={MIN_WINDOW_SIZE}
+				maxSize={MAX_WINDOW_SIZE}
 			>
-				Global
-			</Flex>
-			<Stack flex="1" gap={1} overflowY="auto" px={3} py={2}>
-				{renderedMessages}
-				<div ref={messagesEndRef} />
-			</Stack>
-			<form onSubmit={handleFormSubmit}>
-				<Flex gap={2} borderTop={PANEL_BORDER} p={2}>
-					<Input
-						value={messageDraft}
-						onChange={handleMessageDraftChange}
-						bg={FIELD_BACKGROUND_COLOR}
-						borderColor={FIELD_BORDER_COLOR}
-						rounded="4px"
-						color="inherit"
-						placeholder="Message Global chat…"
-					/>
-					{sendControl}
-				</Flex>
-			</form>
-		</Box>
+				<Tabs.Root value={activeChannelId} onValueChange={handleChannelChange}>
+					<Tabs.List
+						borderBottom={PANEL_BORDER}
+						px={2}
+						color={MUTED_TEXT_COLOR}
+					>
+						{renderedChannelTabs}
+					</Tabs.List>
+				</Tabs.Root>
+				<Stack flex="1" minH={0} gap={1} overflowY="auto" px={3} py={2}>
+					{renderedMessages}
+					<div ref={messagesEndRef} />
+				</Stack>
+				<form onSubmit={handleFormSubmit}>
+					<Flex gap={2} borderTop={PANEL_BORDER} p={2}>
+						<Input
+							value={messageDraft}
+							onChange={handleMessageDraftChange}
+							bg={FIELD_BACKGROUND_COLOR}
+							borderColor={FIELD_BORDER_COLOR}
+							rounded="4px"
+							color="inherit"
+							placeholder="Message Global chat…"
+						/>
+						{sendControl}
+					</Flex>
+				</form>
+			</FloatingWindow>
+		</>
 	);
 }
