@@ -27,6 +27,10 @@ function handleServerMessage(event: MessageEvent) {
 			useGameStore.getState().setOnlineCharacters(message.characters);
 		} else if (message.type === "character-moved") {
 			useGameStore.getState().applyCharacterMoved(message);
+		} else if (message.type === "character-joined") {
+			useGameStore.getState().addOnlineCharacter(message.character);
+		} else if (message.type === "character-left") {
+			useGameStore.getState().removeOnlineCharacter(message.characterId);
 		}
 	} catch (error) {
 		console.warn("invalid server message", error);

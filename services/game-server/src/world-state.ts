@@ -39,6 +39,13 @@ export function buildWorldSnapshot(): WorldSnapshotMessage {
 	return { type: "world-snapshot", characters };
 }
 
+export function getOnlineCharacter(
+	characterId: string,
+): OnlineCharacter | undefined {
+	const state = onlineCharacters.get(characterId);
+	return state === undefined ? undefined : toOnlineCharacter(state);
+}
+
 export function registerCharacter(
 	ws: ServerWebSocket<ConnectionData>,
 ): ServerWebSocket<ConnectionData> | undefined {

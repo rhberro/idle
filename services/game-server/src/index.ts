@@ -6,6 +6,7 @@ import { logger } from "./logger";
 import { getSupabaseClient } from "./supabase-client";
 import {
 	buildWorldSnapshot,
+	getOnlineCharacter,
 	type OnlineCharacterState,
 	registerCharacter,
 	tryMoveCharacter,
@@ -52,6 +53,12 @@ function handleGameOpen(ws: ServerWebSocket<ConnectionData>) {
 
 	ws.subscribe(WORLD_TOPIC);
 	ws.send(JSON.stringify(buildWorldSnapshot()));
+
+	const character = getOnlineCharacter(characterId);
+	if (character !== undefined) {
+		const joinedMessage = { type: "character-joined" as const, character };
+		ws.publish(WORLD_TOPIC, JSON.stringify(joinedMessage));
+	}
 
 	const logPayload = { characterId };
 	logger.info(logPayload, "character connected");
@@ -105,12 +112,16 @@ async function persistFinalPosition(state: OnlineCharacterState) {
 }
 
 function handleGameClose(ws: ServerWebSocket<ConnectionData>) {
+	const { characterId } = ws.data;
 	const removedState = unregisterCharacter(ws);
-	const logPayload = { characterId: ws.data.characterId };
-	logger.info(logPayload, "character disconnected");
 	if (removedState !== undefined) {
+		const leftMessage = { type: "character-left" as const, characterId };
+		server.publish(WORLD_TOPIC, JSON.stringify(leftMessage));
 		void persistFinalPosition(removedState);
 	}
+
+	const logPayload = { characterId };
+	logger.info(logPayload, "character disconnected");
 }
 
 const routes = {
