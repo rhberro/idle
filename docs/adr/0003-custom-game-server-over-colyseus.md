@@ -1,0 +1,7 @@
+# Custom Bun WebSocket game-server instead of Colyseus
+
+We're building the first movement/world slice on top of the existing hand-rolled `services/game-server` (native Bun `WebSocket`, a Zod-validated message protocol in `packages/shared`, `ws.subscribe`/`publish` for broadcast) rather than adopting Colyseus, even though multiple isolated game Worlds — and, further out, sharding a single World across several processes — are on the near-term roadmap and Colyseus looks purpose-built for exactly that.
+
+The reasoning: "multiple isolated Worlds, each load-balanced independently" doesn't need a room/matchmaking framework at all — it's just running one `game-server` deployment per World, the same pattern as any stateless-per-shard service. The problem Colyseus actually solves — splitting *one* logical room/World across multiple processes with shared presence and matchmaking — is the piece we explicitly scoped as a later maybe, not a committed requirement. Adopting Colyseus now would mean replacing the working Bun-native transport and Zod protocol with Colyseus's Schema-based state sync and matchmaking API to prepare for a problem we don't have yet. We also considered Socket.IO as a lighter middle ground; dismissed because Bun's native pub/sub already gives the same room/broadcast primitive for free.
+
+Revisit this once within-World room-sharding becomes a scheduled requirement with real concurrency numbers in hand — Colyseus (or a lighter option, e.g. Supabase Realtime presence or plain Redis pub/sub) should be re-evaluated then, not assumed now.
