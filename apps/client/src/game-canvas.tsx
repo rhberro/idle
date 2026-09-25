@@ -1,3 +1,4 @@
+import { Box } from "@chakra-ui/react";
 import {
 	GRID_TILE_SIZE,
 	ISLAND_MAX_TILE,
@@ -176,5 +177,5 @@ export function GameCanvas(props: GameCanvasProps) {
 
 	useEffect(mountPixiApp, [characterId]);
 
-	return <div ref={containerRef} className="h-full w-full" />;
+	return <Box ref={containerRef} h="full" w="full" />;
 }

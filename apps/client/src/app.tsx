@@ -1,3 +1,4 @@
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { confirmEmail, getSession } from "./auth";
 import { PasswordResetRequested } from "./auth/password-reset-requested";
@@ -8,6 +9,12 @@ import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
 import { CharacterList } from "./characters/character-list";
 import { GameCanvas } from "./game-canvas";
+
+const SHELL_BACKGROUND_COLOR = "#171717";
+const SHELL_TEXT_COLOR = "#f5f5f5";
+const MUTED_TEXT_COLOR = "#a3a3a3";
+const ERROR_TEXT_COLOR = "#f87171";
+const CARD_BORDER = "1px solid #262626";
 
 type AuthView =
 	| { kind: "loading" }
@@ -153,7 +160,11 @@ export function App() {
 
 	let viewContent: React.ReactNode;
 	if (view.kind === "loading") {
-		viewContent = <p className="text-sm text-neutral-400">Loading…</p>;
+		viewContent = (
+			<Text fontSize="sm" color={MUTED_TEXT_COLOR}>
+				Loading…
+			</Text>
+		);
 	} else if (view.kind === "sign-in") {
 		viewContent = (
 			<SignInForm
@@ -174,9 +185,9 @@ export function App() {
 		viewContent = <PendingVerification email={view.email} />;
 	} else if (view.kind === "verification-failed") {
 		viewContent = (
-			<p className="text-sm text-red-400">
+			<Text fontSize="sm" color={ERROR_TEXT_COLOR}>
 				That verification link is invalid or has expired.
-			</p>
+			</Text>
 		);
 	} else if (view.kind === "request-password-reset") {
 		viewContent = (
@@ -213,17 +224,29 @@ export function App() {
 
 	if (view.kind === "in-world") {
 		return (
-			<div className="h-screen w-screen bg-neutral-900 text-neutral-100">
+			<Box
+				h="100vh"
+				w="100vw"
+				bg={SHELL_BACKGROUND_COLOR}
+				color={SHELL_TEXT_COLOR}
+			>
 				{viewContent}
-			</div>
+			</Box>
 		);
 	}
 
 	return (
-		<div className="flex h-screen w-screen items-center justify-center bg-neutral-900 text-neutral-100">
-			<div className="w-full max-w-sm rounded border border-neutral-800 p-6">
+		<Flex
+			h="100vh"
+			w="100vw"
+			align="center"
+			justify="center"
+			bg={SHELL_BACKGROUND_COLOR}
+			color={SHELL_TEXT_COLOR}
+		>
+			<Box w="full" maxW="sm" border={CARD_BORDER} borderRadius="4px" p={6}>
 				{viewContent}
-			</div>
-		</div>
+			</Box>
+		</Flex>
 	);
 }
