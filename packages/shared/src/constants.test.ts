@@ -5,6 +5,9 @@ describe("expForNextLevel", () => {
 	test("level 1 → 100 (CipSoft table)", () => {
 		expect(expForNextLevel(1)).toBe(100);
 	});
+	test("level 2 → 100 (CipSoft table)", () => {
+		expect(expForNextLevel(2)).toBe(100);
+	});
 	test("level 5 → 700 (CipSoft table)", () => {
 		expect(expForNextLevel(5)).toBe(700);
 	});

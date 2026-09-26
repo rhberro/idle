@@ -80,10 +80,10 @@ export function GameHeader(props: GameHeaderProps) {
 				</Text>
 				<Separator orientation="vertical" h="6" />
 				<Stack gap={0}>
-					<Text fontSize="sm" fontWeight="semibold" color="fg">
+					<Text fontSize="md" fontWeight="semibold" color="fg">
 						{characterName}
 					</Text>
-					<Text fontSize="xs" color="fg.muted">
+					<Text fontSize="sm" color="fg.muted">
 						Level {level}
 					</Text>
 				</Stack>

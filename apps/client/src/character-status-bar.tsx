@@ -6,24 +6,21 @@ export type CharacterStatusBarProps = {
 	status: OwnCharacterStatusMessage;
 };
 
-/**
- * Bottom-screen overlay for the player's own character stats.
- *
- * Reads Tibia-style: the filled portion shows the resource color (green HP,
- * blue MP, yellow XP) over a dark, muted track. The wrapper is sized so a
- * future skill/item bar can be dropped in as an additional inner row.
- */
+const statusBarMinWidth = { base: "80", md: "96" };
+
+function clampPercent(value: number): number {
+	return Math.max(0, Math.min(100, value));
+}
+
 export function CharacterStatusBar(props: CharacterStatusBarProps): JSX.Element {
 	const { status } = props;
 
-	const hpPercent = Math.max(
-		0,
-		Math.min(100, (status.health / status.maxHealth) * 100),
-	);
-	const mpPercent = Math.max(
-		0,
-		Math.min(100, (status.mana / status.maxMana) * 100),
-	);
+	const hpPercent = clampPercent((status.health / status.maxHealth) * 100);
+	const mpPercent = clampPercent((status.mana / status.maxMana) * 100);
+
+	const hpLabel = `${status.health}/${status.maxHealth}`;
+	const mpLabel = `${status.mana}/${status.maxMana}`;
+	const xpLabel = `${status.experiencePercentInLevel}%`;
 
 	return (
 		<Box
@@ -33,7 +30,7 @@ export function CharacterStatusBar(props: CharacterStatusBarProps): JSX.Element 
 			transform="translateX(-50%)"
 			pb={4}
 			px={4}
-			minW={{ base: "80", md: "96" }}
+			minW={statusBarMinWidth}
 			maxW="xl"
 			w="full"
 			zIndex={50}
@@ -43,18 +40,18 @@ export function CharacterStatusBar(props: CharacterStatusBarProps): JSX.Element 
 					<ResourceBar
 						percent={hpPercent}
 						color="green.500"
-						label={`${status.health}/${status.maxHealth}`}
+						label={hpLabel}
 					/>
 					<ResourceBar
 						percent={mpPercent}
 						color="blue.500"
-						label={`${status.mana}/${status.maxMana}`}
+						label={mpLabel}
 					/>
 				</Flex>
 				<ResourceBar
 					percent={status.experiencePercentInLevel}
 					color="yellow.400"
-					label={`${status.experiencePercentInLevel}%`}
+					label={xpLabel}
 					h="3"
 				/>
 			</Stack>
@@ -71,6 +68,7 @@ type ResourceBarProps = {
 
 function ResourceBar(props: ResourceBarProps): JSX.Element {
 	const { percent, color, label, h = "6" } = props;
+	const fillWidth = `${percent}%`;
 
 	return (
 		<Box
@@ -88,7 +86,7 @@ function ResourceBar(props: ResourceBarProps): JSX.Element {
 				top={0}
 				left={0}
 				bottom={0}
-				w={`${percent}%`}
+				w={fillWidth}
 				bg={color}
 				transition="width 150ms ease-out"
 			/>

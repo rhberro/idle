@@ -56,6 +56,11 @@ function readTokenFromLocation(): LocationToken | undefined {
 export function App() {
 	const [view, setView] = useState<AuthView>(loadingView);
 	const ownCharacterStatus = useGameStore((state) => state.ownCharacterStatus);
+	const ownCharacterLevel = ownCharacterStatus?.level ?? 1;
+	const characterStatusBar =
+		ownCharacterStatus !== undefined ? (
+			<CharacterStatusBar status={ownCharacterStatus} />
+		) : null;
 
 	function checkInitialAuthState() {
 		async function confirmFromUrl(hash: string) {
@@ -243,24 +248,28 @@ export function App() {
 			<>
 				<GameHeader
 					characterName={view.character.name}
-					level={ownCharacterStatus?.level ?? 1}
+					level={ownCharacterLevel}
 					onSwitchCharacter={handleLeaveWorld}
 					onLogOut={handleSignOutFromWorld}
 				/>
 				<GameCanvas characterId={view.character.id} />
 				<ChatPanel character={view.character} />
-				{ownCharacterStatus !== undefined && (
-					<CharacterStatusBar status={ownCharacterStatus} />
-				)}
+				{characterStatusBar}
 			</>
 		);
 	}
 
 	if (view.kind === "in-world") {
 		return (
-			<Box h="100vh" w="100vw" bg="bg" color="fg">
+			<Flex
+				h="100vh"
+				w="100vw"
+				bg="bg"
+				color="fg"
+				direction="column"
+			>
 				{viewContent}
-			</Box>
+			</Flex>
 		);
 	}
 

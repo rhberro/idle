@@ -193,5 +193,5 @@ export function GameCanvas(props: GameCanvasProps) {
 
 	useEffect(mountPixiApp, [characterId]);
 
-	return <Box ref={containerRef} h="full" w="full" />;
+	return <Box ref={containerRef} flex="1" w="full" />;
 }

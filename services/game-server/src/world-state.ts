@@ -74,27 +74,6 @@ export function getOnlineCharacterState(
 	return onlineCharacters.get(characterId);
 }
 
-export async function loadCharacterStats(
-	characterId: string,
-): Promise<CharacterStats> {
-	const { data, error } = await getSupabaseClient()
-		.from("characters")
-		.select("health, max_health, mana, max_mana, level, experience")
-		.eq("id", characterId)
-		.maybeSingle();
-	if (error || data === null) {
-		throw error ?? new Error(`Character ${characterId} not found`);
-	}
-	return {
-		health: data.health,
-		maxHealth: data.max_health,
-		mana: data.mana,
-		maxMana: data.max_mana,
-		level: data.level,
-		experience: data.experience,
-	};
-}
-
 export function buildOwnCharacterStatus(
 	state: OnlineCharacterState,
 ): OwnCharacterStatusMessage {
