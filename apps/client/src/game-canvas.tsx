@@ -9,7 +9,11 @@ import {
 import { Application, Container, Graphics } from "pixi.js";
 import { useEffect, useRef } from "react";
 import { getAccessToken } from "./auth";
-import { connectToWorld, sendPlayerMove } from "./game-connection";
+import {
+	connectToWorld,
+	sendPlayerMove,
+	sendRequestCharacterStatus,
+} from "./game-connection";
 import {
 	computeCameraOffset,
 	keyToDirection,
@@ -135,6 +139,12 @@ export function GameCanvas(props: GameCanvasProps) {
 			sendPlayerMove(socket, direction);
 		}
 
+		function onVisibilityChange() {
+			if (document.visibilityState === "visible" && socket !== undefined) {
+				sendRequestCharacterStatus(socket);
+			}
+		}
+
 		async function setup(element: HTMLDivElement) {
 			// PixiJS canvas clear color is a JS-side value, not a CSS token: it
 			// exists to fill the sliver outside the world bounds that appears at
@@ -163,6 +173,7 @@ export function GameCanvas(props: GameCanvasProps) {
 				return;
 			}
 			socket = connectToWorld({ token, characterId });
+			document.addEventListener("visibilitychange", onVisibilityChange);
 		}
 
 		void setup(container);
@@ -170,6 +181,7 @@ export function GameCanvas(props: GameCanvasProps) {
 		function cleanup() {
 			cancelled = true;
 			window.removeEventListener("keydown", handleKeyDown);
+			document.removeEventListener("visibilitychange", onVisibilityChange);
 			socket?.close();
 			if (app.renderer) {
 				app.destroy(pixiDestroyOptions, pixiDestroyCleanupOptions);

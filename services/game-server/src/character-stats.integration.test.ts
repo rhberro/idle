@@ -213,3 +213,27 @@ test("a kicked-out stale connection does not overwrite the newer connection's st
 	}
 	expect(row).toEqual(EXPECTED_PERSISTED_STATS);
 });
+
+test("a request-character-status after connect triggers a fresh own-character-status push", async function () {
+	const account = await createVerifiedTestAccount();
+	const worldId = await fetchSeedWorldId();
+	const character = await createTestCharacter(
+		account.id,
+		worldId,
+		`RequestStats_${randomNameSuffix()}`,
+	);
+	const token = await fetchAccessToken(account.email);
+
+	const result = await connectGameSocket(buildWsUrl(token, character.id));
+	if (result.outcome !== "open") {
+		throw new Error("expected connection to open");
+	}
+	await waitForMessage(result.socket);
+	await waitForMessage(result.socket);
+
+	result.socket.send(JSON.stringify({ type: "request-character-status" }));
+	const status = await waitForMessage(result.socket);
+	expect(status).toEqual(EXPECTED_STATS_MESSAGE);
+
+	result.socket.close();
+});

@@ -50,3 +50,7 @@ export function sendPlayerMove(socket: WebSocket, direction: Direction): void {
 	const playerMoveMessage = { type: "player-move" as const, direction };
 	socket.send(JSON.stringify(playerMoveMessage));
 }
+
+export function sendRequestCharacterStatus(socket: WebSocket): void {
+	socket.send(JSON.stringify({ type: "request-character-status" }));
+}

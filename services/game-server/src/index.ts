@@ -109,6 +109,13 @@ function handleGameMessage(
 			handlePlayerMove(ws, message.direction);
 			return;
 		}
+		if (message.type === "request-character-status") {
+			const character = getOnlineCharacterState(ws.data.characterId);
+			if (character !== undefined) {
+				ws.send(JSON.stringify(buildOwnCharacterStatus(character)));
+			}
+			return;
+		}
 		const logPayload = { message };
 		logger.info(logPayload, "received client message");
 	} catch (error) {
