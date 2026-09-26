@@ -6,6 +6,12 @@ create table public.characters (
 	x integer not null default 34,
 	y integer not null default 34,
 	direction text not null default 'south' check (direction in ('north', 'south', 'east', 'west')),
+	health integer not null default 100,
+	max_health integer not null default 100,
+	mana integer not null default 50,
+	max_mana integer not null default 50,
+	level integer not null default 1,
+	experience integer not null default 0,
 	created_at timestamptz not null default now(),
 	updated_at timestamptz not null default now()
 );

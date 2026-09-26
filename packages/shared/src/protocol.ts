@@ -19,9 +19,22 @@ const playerMoveMessageShape = {
 
 export const playerMoveMessageSchema = z.object(playerMoveMessageShape);
 
+const requestCharacterStatusShape = {
+	type: z.literal("request-character-status"),
+};
+
+export const requestCharacterStatusSchema = z.object(
+	requestCharacterStatusShape,
+);
+
+export type RequestCharacterStatusMessage = z.infer<
+	typeof requestCharacterStatusSchema
+>;
+
 const clientMessageSchemas = [
 	pingMessageSchema,
 	playerMoveMessageSchema,
+	requestCharacterStatusSchema,
 ] as const;
 
 export const clientMessageSchema = z.discriminatedUnion(
@@ -96,12 +109,30 @@ const pongMessageShape = {
 
 export const pongMessageSchema = z.object(pongMessageShape);
 
+const ownCharacterStatusShape = {
+	type: z.literal("own-character-status"),
+	health: z.number().int(),
+	maxHealth: z.number().int(),
+	mana: z.number().int(),
+	maxMana: z.number().int(),
+	level: z.number().int(),
+	experience: z.number().int(),
+	experiencePercentInLevel: z.number().int().min(0).max(100),
+};
+
+export const ownCharacterStatusSchema = z.object(ownCharacterStatusShape);
+
+export type OwnCharacterStatusMessage = z.infer<
+	typeof ownCharacterStatusSchema
+>;
+
 const serverMessageSchemas = [
 	worldSnapshotMessageSchema,
 	characterMovedMessageSchema,
 	characterJoinedMessageSchema,
 	characterLeftMessageSchema,
 	pongMessageSchema,
+	ownCharacterStatusSchema,
 ] as const;
 
 export const serverMessageSchema = z.discriminatedUnion(

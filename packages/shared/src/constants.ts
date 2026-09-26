@@ -20,3 +20,31 @@ export const STARTING_POSITION: { x: number; y: number } = {
 };
 
 export const STARTING_DIRECTION = "south" as const;
+
+/**
+ * Tibia's cubic XP curve: experience required to advance from `level` to `level + 1`.
+ * Equivalent to CipSoft's `E(L+1) − E(L)`. Pinned against CipSoft's published
+ * table for levels 1–200 in constants.test.ts. See ADR 0006.
+ */
+export const expForNextLevel = (level: number): number =>
+	50 * (level * level - 3 * level + 4);
+
+/**
+ * Cumulative experience required to REACH `level`. Iterative sum of
+ * `expForNextLevel` — bulletproof against Number precision loss past level
+ * ~100,000. At current scale (level 1 on day one) the loop is single-digit.
+ */
+export const expToReach = (level: number): number => {
+	let total = 0;
+	for (let l = 1; l < level; l++) {
+		total += expForNextLevel(l);
+	}
+	return total;
+};
+
+/** Default Character stats on creation. Mirrors the column defaults in
+ *  supabase/schemas/characters.sql — keep in sync. See ADR 0006. */
+export const STARTING_HEALTH = 100;
+export const STARTING_MANA = 50;
+export const STARTING_LEVEL = 1;
+export const STARTING_EXPERIENCE = 0;

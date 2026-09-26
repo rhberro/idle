@@ -18,6 +18,10 @@ export type Character = {
 	direction: Direction;
 	health: number;
 	maxHealth: number;
+	mana: number;
+	maxMana: number;
+	level: number;
+	experience: number;
 };
 
 export type Monster = {
