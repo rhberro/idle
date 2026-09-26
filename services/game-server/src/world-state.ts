@@ -2,13 +2,18 @@ import {
 	applyDirection,
 	type CharacterMovedMessage,
 	type Direction,
+	expForNextLevel,
+	expToReach,
 	isWithinIsland,
 	type OnlineCharacter,
+	type OwnCharacterStatusMessage,
 	WORLD_TICK_MS,
 	type WorldSnapshotMessage,
 } from "@idle/shared";
 import type { ServerWebSocket } from "bun";
 import type { ConnectionData } from "./connection-auth";
+import { logger } from "./logger";
+import { getSupabaseClient } from "./supabase-client";
 
 export type OnlineCharacterState = {
 	ws: ServerWebSocket<ConnectionData>;
@@ -18,6 +23,21 @@ export type OnlineCharacterState = {
 	y: number;
 	direction: Direction;
 	nextAllowedMoveAt: number;
+	health: number;
+	maxHealth: number;
+	mana: number;
+	maxMana: number;
+	level: number;
+	experience: number;
+};
+
+export type CharacterStats = {
+	health: number;
+	maxHealth: number;
+	mana: number;
+	maxMana: number;
+	level: number;
+	experience: number;
 };
 
 const onlineCharacters = new Map<string, OnlineCharacterState>();
@@ -46,6 +66,74 @@ export function getOnlineCharacter(
 	return state === undefined ? undefined : toOnlineCharacter(state);
 }
 
+/** Internal lookup returning the full authoritative state, unlike the
+ *  public-facing {@link getOnlineCharacter}. */
+export function getOnlineCharacterState(
+	characterId: string,
+): OnlineCharacterState | undefined {
+	return onlineCharacters.get(characterId);
+}
+
+export async function loadCharacterStats(
+	characterId: string,
+): Promise<CharacterStats> {
+	const { data, error } = await getSupabaseClient()
+		.from("characters")
+		.select("health, max_health, mana, max_mana, level, experience")
+		.eq("id", characterId)
+		.maybeSingle();
+	if (error || data === null) {
+		throw error ?? new Error(`Character ${characterId} not found`);
+	}
+	return {
+		health: data.health,
+		maxHealth: data.max_health,
+		mana: data.mana,
+		maxMana: data.max_mana,
+		level: data.level,
+		experience: data.experience,
+	};
+}
+
+export function buildOwnCharacterStatus(
+	state: OnlineCharacterState,
+): OwnCharacterStatusMessage {
+	const experienceIntoLevel = state.experience - expToReach(state.level);
+	const experiencePercentInLevel = Math.floor(
+		(experienceIntoLevel / expForNextLevel(state.level)) * 100,
+	);
+	return {
+		type: "own-character-status",
+		health: state.health,
+		maxHealth: state.maxHealth,
+		mana: state.mana,
+		maxMana: state.maxMana,
+		level: state.level,
+		experience: state.experience,
+		experiencePercentInLevel,
+	};
+}
+
+export async function persistCharacterStats(
+	state: OnlineCharacterState,
+): Promise<void> {
+	const { error } = await getSupabaseClient()
+		.from("characters")
+		.update({
+			health: state.health,
+			max_health: state.maxHealth,
+			mana: state.mana,
+			max_mana: state.maxMana,
+			level: state.level,
+			experience: state.experience,
+		})
+		.eq("id", state.id);
+	if (error) {
+		const warnPayload = { error, characterId: state.id };
+		logger.warn(warnPayload, "failed to persist character stats");
+	}
+}
+
 export function sendToOthers(
 	excludeCharacterId: string,
 	message: unknown,
@@ -60,6 +148,7 @@ export function sendToOthers(
 
 export function registerCharacter(
 	ws: ServerWebSocket<ConnectionData>,
+	stats: CharacterStats,
 ): ServerWebSocket<ConnectionData> | undefined {
 	const { characterId, name, x, y, direction } = ws.data;
 	const existing = onlineCharacters.get(characterId);
@@ -71,6 +160,12 @@ export function registerCharacter(
 		y,
 		direction,
 		nextAllowedMoveAt: 0,
+		health: stats.health,
+		maxHealth: stats.maxHealth,
+		mana: stats.mana,
+		maxMana: stats.maxMana,
+		level: stats.level,
+		experience: stats.experience,
 	});
 	return existing?.ws;
 }

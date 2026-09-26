@@ -8,6 +8,12 @@ export type ConnectionData = {
 	x: number;
 	y: number;
 	direction: Direction;
+	health: number;
+	maxHealth: number;
+	mana: number;
+	maxMana: number;
+	level: number;
+	experience: number;
 };
 
 export async function authenticateConnection(
@@ -30,7 +36,9 @@ export async function authenticateConnection(
 
 	const { data: character, error: characterError } = await supabase
 		.from("characters")
-		.select("id, account_id, world_id, name, x, y, direction")
+		.select(
+			"id, account_id, world_id, name, x, y, direction, health, max_health, mana, max_mana, level, experience",
+		)
 		.eq("id", characterId)
 		.maybeSingle();
 	if (characterError || character === null) {
@@ -50,5 +58,11 @@ export async function authenticateConnection(
 		x: character.x,
 		y: character.y,
 		direction: character.direction,
+		health: character.health,
+		maxHealth: character.max_health,
+		mana: character.mana,
+		maxMana: character.max_mana,
+		level: character.level,
+		experience: character.experience,
 	};
 }

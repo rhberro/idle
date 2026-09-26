@@ -78,6 +78,12 @@ function sleep(ms: number): Promise<void> {
 	});
 }
 
+// Since #27 the server pushes an own-character-status immediately after the
+// world-snapshot on connect; drain it so later reads observe action responses.
+async function drainOwnCharacterStatus(socket: WebSocket): Promise<void> {
+	await waitForMessage(socket);
+}
+
 const NO_MESSAGE_WAIT_MS = 300;
 const PERSIST_WAIT_MS = 300;
 
@@ -228,6 +234,7 @@ test("a valid move broadcasts character-moved with the new position", async func
 		throw new Error("expected connection to open");
 	}
 	await waitForMessage(result.socket);
+	await drainOwnCharacterStatus(result.socket);
 
 	result.socket.send(
 		JSON.stringify({ type: "player-move", direction: "north" }),
@@ -259,6 +266,7 @@ test("a move sent before the step duration elapses is ignored", async function (
 		throw new Error("expected connection to open");
 	}
 	await waitForMessage(result.socket);
+	await drainOwnCharacterStatus(result.socket);
 
 	result.socket.send(
 		JSON.stringify({ type: "player-move", direction: "north" }),
@@ -293,6 +301,7 @@ test("a move into the ocean is ignored", async function () {
 		throw new Error("expected connection to open");
 	}
 	await waitForMessage(result.socket);
+	await drainOwnCharacterStatus(result.socket);
 
 	result.socket.send(
 		JSON.stringify({ type: "player-move", direction: "west" }),
@@ -322,6 +331,7 @@ test("position persists on disconnect and is reflected on reconnect", async func
 		throw new Error("expected connection to open");
 	}
 	await waitForMessage(first.socket);
+	await drainOwnCharacterStatus(first.socket);
 
 	first.socket.send(
 		JSON.stringify({ type: "player-move", direction: "north" }),
@@ -395,6 +405,7 @@ test("a stale kicked-out connection does not overwrite the newer connection's po
 		throw new Error("expected second connection to open");
 	}
 	await waitForMessage(second.socket);
+	await drainOwnCharacterStatus(second.socket);
 	await firstClosed;
 
 	second.socket.send(
@@ -464,6 +475,8 @@ test("two Characters in the same World see each other join, move, and leave", as
 			},
 		],
 	});
+
+	await drainOwnCharacterStatus(connectionA.socket);
 
 	const joinedPromise = waitForMessage(connectionA.socket);
 	const connectionB = await connectGameSocket(

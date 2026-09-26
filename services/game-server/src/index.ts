@@ -5,9 +5,12 @@ import { getEnv, getPort } from "./env";
 import { logger } from "./logger";
 import { getSupabaseClient } from "./supabase-client";
 import {
+	buildOwnCharacterStatus,
 	buildWorldSnapshot,
 	getOnlineCharacter,
+	getOnlineCharacterState,
 	type OnlineCharacterState,
+	persistCharacterStats,
 	registerCharacter,
 	sendToOthers,
 	tryMoveCharacter,
@@ -48,12 +51,25 @@ async function handleGameFetch(req: Request, server: Server<ConnectionData>) {
 }
 
 function handleGameOpen(ws: ServerWebSocket<ConnectionData>) {
-	const { characterId } = ws.data;
-	const previousConnection = registerCharacter(ws);
+	const { characterId, health, maxHealth, mana, maxMana, level, experience } =
+		ws.data;
+	const previousConnection = registerCharacter(ws, {
+		health,
+		maxHealth,
+		mana,
+		maxMana,
+		level,
+		experience,
+	});
 	previousConnection?.close();
 
 	ws.subscribe(WORLD_TOPIC);
 	ws.send(JSON.stringify(buildWorldSnapshot()));
+
+	const ownState = getOnlineCharacterState(characterId);
+	if (ownState !== undefined) {
+		ws.send(JSON.stringify(buildOwnCharacterStatus(ownState)));
+	}
 
 	const character = getOnlineCharacter(characterId);
 	if (character !== undefined) {
@@ -119,6 +135,7 @@ function handleGameClose(ws: ServerWebSocket<ConnectionData>) {
 		const leftMessage = { type: "character-left" as const, characterId };
 		server.publish(WORLD_TOPIC, JSON.stringify(leftMessage));
 		void persistFinalPosition(removedState);
+		void persistCharacterStats(removedState);
 	}
 
 	const logPayload = { characterId };
