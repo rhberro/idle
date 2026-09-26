@@ -31,6 +31,8 @@ function handleServerMessage(event: MessageEvent) {
 			useGameStore.getState().addOnlineCharacter(message.character);
 		} else if (message.type === "character-left") {
 			useGameStore.getState().removeOnlineCharacter(message.characterId);
+		} else if (message.type === "own-character-status") {
+			useGameStore.getState().setOwnCharacterStatus(message);
 		}
 	} catch (error) {
 		console.warn("invalid server message", error);

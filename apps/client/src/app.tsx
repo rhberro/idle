@@ -1,6 +1,11 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { type CharacterSummary, confirmEmail, getSession } from "./auth";
+import {
+	type CharacterSummary,
+	confirmEmail,
+	getSession,
+	signOut,
+} from "./auth";
 import { PasswordResetRequested } from "./auth/password-reset-requested";
 import { PendingVerification } from "./auth/pending-verification";
 import { RequestPasswordResetForm } from "./auth/request-password-reset-form";
@@ -8,8 +13,11 @@ import { SetNewPasswordForm } from "./auth/set-new-password-form";
 import { SignInForm } from "./auth/sign-in-form";
 import { SignUpForm } from "./auth/sign-up-form";
 import { CharacterList } from "./characters/character-list";
+import { CharacterStatusBar } from "./character-status-bar";
 import { ChatPanel } from "./chat-panel";
 import { GameCanvas } from "./game-canvas";
+import { GameHeader } from "./game-header";
+import { useGameStore } from "./store";
 
 type AuthView =
 	| { kind: "loading" }
@@ -47,6 +55,7 @@ function readTokenFromLocation(): LocationToken | undefined {
 
 export function App() {
 	const [view, setView] = useState<AuthView>(loadingView);
+	const ownCharacterStatus = useGameStore((state) => state.ownCharacterStatus);
 
 	function checkInitialAuthState() {
 		async function confirmFromUrl(hash: string) {
@@ -153,6 +162,22 @@ export function App() {
 		}
 	}
 
+	function handleLeaveWorld() {
+		if (view.kind === "in-world") {
+			const nextView: AuthView = { kind: "signed-in", email: view.email };
+			setView(nextView);
+		}
+	}
+
+	async function handleSignOutFromWorld() {
+		try {
+			await signOut();
+		} catch (error) {
+			console.error(error);
+		}
+		setView(signInView);
+	}
+
 	let viewContent: React.ReactNode;
 	if (view.kind === "loading") {
 		viewContent = (
@@ -216,8 +241,17 @@ export function App() {
 	} else {
 		viewContent = (
 			<>
+				<GameHeader
+					characterName={view.character.name}
+					level={ownCharacterStatus?.level ?? 1}
+					onSwitchCharacter={handleLeaveWorld}
+					onLogOut={handleSignOutFromWorld}
+				/>
 				<GameCanvas characterId={view.character.id} />
 				<ChatPanel character={view.character} />
+				{ownCharacterStatus !== undefined && (
+					<CharacterStatusBar status={ownCharacterStatus} />
+				)}
 			</>
 		);
 	}

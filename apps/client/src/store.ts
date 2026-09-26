@@ -2,6 +2,7 @@ import type {
 	Character,
 	CharacterMovedMessage,
 	OnlineCharacter,
+	OwnCharacterStatusMessage,
 } from "@idle/shared";
 import { create, type StateCreator } from "zustand";
 
@@ -13,6 +14,8 @@ export type GameState = {
 	applyCharacterMoved: (update: CharacterMovedMessage) => void;
 	addOnlineCharacter: (character: OnlineCharacter) => void;
 	removeOnlineCharacter: (characterId: string) => void;
+	ownCharacterStatus: OwnCharacterStatusMessage | undefined;
+	setOwnCharacterStatus: (status: OwnCharacterStatusMessage) => void;
 };
 
 const createGameStore: StateCreator<GameState> = function createGameStore(set) {
@@ -71,6 +74,10 @@ const createGameStore: StateCreator<GameState> = function createGameStore(set) {
 				};
 			}
 			set(nextState);
+		},
+		ownCharacterStatus: undefined,
+		setOwnCharacterStatus(status) {
+			set({ ownCharacterStatus: status });
 		},
 	};
 };
